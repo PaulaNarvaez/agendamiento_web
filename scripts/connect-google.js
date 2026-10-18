@@ -53,7 +53,7 @@ const server = http.createServer(async (req, res) => {
     const temporary = `${target}.${randomBytes(8).toString('hex')}.tmp`;
     try { await writeFile(temporary, content, { mode: 0o600, flag: 'wx' }); await rename(temporary, target); }
     finally { await unlink(temporary).catch(() => {}); }
-    res.end('Cuenta autorizada. Puedes cerrar esta pestaña. Completa horarios, duración, valor y enlace online en .env; después reinicia npm start.');
+    res.end('Cuenta autorizada. Puedes cerrar esta pestaña. Completa horarios, duración y valor en .env; después reinicia npm start.');
     console.log('Autorización guardada en .env (archivo privado, excluido de Git). Completa la configuración y reinicia npm start.');
   } catch (error) {
     res.writeHead(400);

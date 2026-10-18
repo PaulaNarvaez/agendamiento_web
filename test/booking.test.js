@@ -16,17 +16,28 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
     globalThis.fetch = async (url, options) => {
       if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'fake', expires_in: 3600 });
       if (url.endsWith('/freeBusy')) return Response.json({ calendars: { 'heatherroseyt@gmail.com': { busy: event ? [{ start: event.start.dateTime, end: event.end.dateTime }] : [] } } });
-      assert.equal(url, 'https://www.googleapis.com/calendar/v3/calendars/heatherroseyt%40gmail.com/events?sendUpdates=all');
-      event = JSON.parse(options.body);
-      assert.match(event.description, /Camila Leiva/);
-      assert.equal(event.location, 'https://example.com/private-session');
-      assert.equal(event.attendees[0].email, 'patient@example.com');
-      return Response.json({ id: 'mock-event' });
+      if (options?.method === 'POST') {
+        assert.equal(url, 'https://www.googleapis.com/calendar/v3/calendars/heatherroseyt%40gmail.com/events?conferenceDataVersion=1&sendUpdates=none');
+        event = JSON.parse(options.body);
+        assert.match(event.description, /Camila Leiva/);
+        assert.equal(event.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
+        assert.equal(event.attendees[0].email, 'patient@example.com');
+        return Response.json({ id: 'mock-event', conferenceData: { createRequest: { status: { statusCode: 'pending' } } } });
+      }
+      if (options?.method === 'PATCH') {
+        assert.ok(url.endsWith('/events/mock-event?conferenceDataVersion=1&sendUpdates=all'));
+        const update = JSON.parse(options.body);
+        assert.equal(update.location, 'https://meet.google.com/unique-session');
+        assert.ok(update.description.includes(update.location));
+        return Response.json({ id: 'mock-event' });
+      }
+      assert.ok(url.endsWith('/events/mock-event'));
+      return Response.json({ id: 'mock-event', hangoutLink: 'https://meet.google.com/unique-session' });
     };
   `);
   const child = spawn(process.execPath, ['--import', pathToFileURL(mock).href, 'server.js'], {
     cwd: new URL('../', import.meta.url),
-    env: { ...process.env, PORT: '0', GOOGLE_CLIENT_ID: 'fake', GOOGLE_CLIENT_SECRET: 'fake', GOOGLE_REFRESH_TOKEN: 'fake', GOOGLE_CALENDAR_ID: 'heatherroseyt@gmail.com', SESSION_DURATION_MINUTES: '50', SESSION_PRICE_CLP: '30000', AVAILABLE_WEEKDAYS: '0,1,2,3,4,5,6', AVAILABLE_HOURS: '09:00,10:00', ONLINE_SESSION_URL: 'https://example.com/private-session' },
+    env: { ...process.env, PORT: '0', GOOGLE_CLIENT_ID: 'fake', GOOGLE_CLIENT_SECRET: 'fake', GOOGLE_REFRESH_TOKEN: 'fake', GOOGLE_CALENDAR_ID: 'heatherroseyt@gmail.com', SESSION_DURATION_MINUTES: '50', SESSION_PRICE_CLP: '30000', AVAILABLE_WEEKDAYS: '0,1,2,3,4,5,6', AVAILABLE_HOURS: '09:00,10:00', ONLINE_SESSION_URL: '' },
     stdio: ['ignore','pipe','pipe'],
   });
   t.after(() => child.kill());
@@ -47,7 +58,7 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
   const results = await Promise.all([book(input), book(input)]);
   assert.deepEqual(results.map(r=>r.status).sort(), [201,409], 'solo se confirma una reserva del mismo horario');
   const result = await results.find(r=>r.status===201).json();
-  assert.equal(result.onlineUrl, 'https://example.com/private-session');
+  assert.equal(result.onlineUrl, 'https://meet.google.com/unique-session');
   const available = await (await fetch(base+'/api/availability?date='+input.date)).json();
   assert.deepEqual(available.slots.map(s=>s.hour), ['10:00']);
 });

@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { missingSettings, configurationReport } from './configuration.js';
-import { bookingEvent, createGoogleClient } from './calendar.js';
+import { reserveWithMeet, createGoogleClient } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
 const live = missingSettings().length === 0;
@@ -10,7 +10,7 @@ const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
 const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
 const hours = [...new Set((process.env.AVAILABLE_HOURS || '09:00,10:00,11:00,15:00,16:00,17:00').split(','))].sort();
 if (!Number.isInteger(duration) || duration < 15 || duration > 180 || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6) || hours.some(hour => !/^([01]\d|2[0-3]):[0-5]\d$/.test(hour))) throw new Error('Configuración de horarios no válida');
-if (live && (!Number.isFinite(Number(process.env.SESSION_PRICE_CLP)) || Number(process.env.SESSION_PRICE_CLP) < 0 || !process.env.ONLINE_SESSION_URL.startsWith('https://'))) throw new Error('Precio o enlace online no válido');
+if (live && (!Number.isFinite(Number(process.env.SESSION_PRICE_CLP)) || Number(process.env.SESSION_PRICE_CLP) < 0)) throw new Error('Precio no válido');
 const google = createGoogleClient({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN });
 async function available(date) {
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -55,9 +55,8 @@ const server = http.createServer(async (req, res) => {
       const action = bookingQueue.then(async () => {
         const slot = (await available(input.date)).find(s => s.hour === input.hour);
         if (!slot) return json(res, 409, { error: 'Este horario ya no está disponible. Elige otro.' });
-        const event = await google(`calendars/${encodeURIComponent(process.env.GOOGLE_CALENDAR_ID)}/events?sendUpdates=all`, { method: 'POST', body: JSON.stringify(bookingEvent(input, slot, process.env.ONLINE_SESSION_URL)) });
-        if (!event.id) throw new Error('Event creation unconfirmed');
-        return json(res, 201, { booked: true, start: slot.start, onlineUrl: process.env.ONLINE_SESSION_URL, message: 'Tu reserva está registrada. Google Calendar enviará una invitación a tu correo.' });
+        const { onlineUrl } = await reserveWithMeet(google, process.env.GOOGLE_CALENDAR_ID, input, slot);
+        return json(res, 201, { booked: true, start: slot.start, onlineUrl, message: 'Tu reserva está registrada. Google Calendar enviará una invitación con tu enlace exclusivo de Google Meet.' });
       });
       bookingQueue = action.catch(() => {});
       return await action;
@@ -70,8 +69,9 @@ const server = http.createServer(async (req, res) => {
     json(res, 404, { error: 'No encontrado.' });
   } catch (error) {
     if (error.code === 'ENOENT') return json(res, 404, { error: 'No encontrado.' });
+    if (error.code === 'MEET_UNAVAILABLE') return json(res, 503, { error: 'Google no pudo generar la videollamada. El evento provisional se eliminó y la reserva no se confirmó. Intenta nuevamente más tarde.' });
     console.error('No se pudo completar la operación con el servicio de agenda.');
-    json(res, 503, { error: 'No pudimos confirmar la operación. Antes de reintentar, revisa tu correo para evitar duplicados.' });
+    json(res, 503, { error: 'No pudimos confirmar la operación. Antes de reintentar, revisa tu correo o consulta con la profesional para comprobar si existe una reserva y evitar duplicados.' });
   }
 });
 server.on('error', error => {

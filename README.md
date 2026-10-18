@@ -26,6 +26,10 @@ npm start
 
 `npm run dev` reinicia el servidor al editar. `.env` se carga automáticamente al iniciar; al cambiar sus valores reinicia el servidor. Si el puerto está ocupado, define otro `PORT` en `.env`, por ejemplo `PORT=3001`. El terminal imprimirá el puerto utilizado.
 
+## Actualizar desde la versión con enlace fijo
+
+Ejecuta `git pull origin main`, conserva tu `.env` y reinicia con `npm.cmd start` en Windows. No necesitas crear un enlace Meet ni volver a autorizar si ya concediste los permisos de Calendar. Comprueba `npm.cmd run check:config`: deben estar completos duración, valor, días y horas, además de las credenciales. Prueba dos reservas con datos propios y verifica que sus eventos e invitaciones contengan enlaces Meet diferentes. Las pruebas automatizadas usan Google simulado; la comprobación con la cuenta real sigue siendo necesaria.
+
 ## Estado de las reservas
 
 Sin la configuración completa, la agenda es una **demostración**: horarios de ejemplo, sin guardar datos de pacientes, crear eventos ni enviar invitaciones. El sitio identifica este estado. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.
@@ -36,7 +40,7 @@ Cuenta propuesta: **heatherroseyt@gmail.com**. El correo no es una credencial y 
 
 En la terminal de VS Code, dentro de la carpeta del proyecto, ejecuta `npm.cmd run check:config` (Windows) o `npm run check:config` (otros sistemas). El informe muestra la ruta del `.env` esperado y únicamente los nombres de las variables vacías, nunca sus valores. Completa esos campos en tu computador, guarda el archivo, detén el servidor con Ctrl+C y vuelve a ejecutar `npm.cmd start`. No sobrescribas tu `.env` con la plantilla: perderías tu autorización de Google.
 
-La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días, horas o enlace online. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar en modo demo, el servidor también imprime automáticamente los campos que faltan.
+La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días u horas. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar en modo demo, el servidor también imprime automáticamente los campos que faltan.
 
 ## Conectar tu cuenta de Google (en tu propio computador)
 
@@ -50,7 +54,7 @@ La autorización de Google y la configuración de la sesión son requisitos sepa
    ```
 
 5. Abre el enlace de Google que imprime el terminal **en el mismo computador**. Inicia sesión en la cuenta indicada y concede los permisos. El asistente comprueba la cuenta autorizada y guarda el refresh token en `.env` sin mostrarlo. Usa un retorno local en el puerto 53682 y expira a los diez minutos. Este asistente es para desarrollo local, no es una ruta pública del sitio.
-6. Define en `.env` la duración, valor, días, horas y enlace de videollamada. No se incluyen valores clínicos ni comerciales inventados:
+6. Define en `.env` la duración, valor, días y horas. No se incluyen valores clínicos ni comerciales inventados:
 
    | Variable | Contenido |
    | --- | --- |
@@ -58,7 +62,6 @@ La autorización de Google y la configuración de la sesión son requisitos sepa
    | `SESSION_PRICE_CLP` | Valor en pesos chilenos, sin separadores |
    | `AVAILABLE_WEEKDAYS` | Días separados por coma: 0 domingo, 1 lunes … 6 sábado |
    | `AVAILABLE_HOURS` | Horas de inicio `HH:MM`, separadas por coma, horario de Chile |
-   | `ONLINE_SESSION_URL` | Enlace HTTPS de videollamada autorizado por Camila |
 
 7. Reinicia `npm start`. La página debe mostrar que la agenda está conectada. Comprueba con datos propios una reserva: evento en tu calendario, invitación recibida por el paciente, fecha/hora/profesional/enlace correctos y bloqueo del mismo horario. Esta prueba requiere autorización real y aún está pendiente.
 
@@ -72,11 +75,13 @@ El evento aparece en el calendario de `heatherroseyt@gmail.com` cuando se usa es
 
 Para recibir avisos en tu propio correo, configura las notificaciones de ese calendario en Google Calendar. Cada paciente controla las notificaciones de su calendario. Los recordatorios configurados en el evento corresponden a la cuenta organizadora; no sustituyen ni garantizan los recordatorios del paciente. Las invitaciones dependen de Google y pueden llegar a spam: no hay un servicio SMTP separado ni seguimiento de entrega.
 
-El enlace online configurado es fijo. No se crean automáticamente enlaces Google Meet individuales.
+Cada reserva solicita un **Google Meet distinto** mediante `conferenceDataVersion=1` y un `requestId` nuevo. No necesitas crear reuniones manualmente ni configurar `ONLINE_SESSION_URL`; si esa variable existe en un `.env` antiguo, se ignora. La cuenta y el calendario autorizados deben permitir crear Google Meet.
+
+La aplicación crea primero un evento provisional sin solicitar invitaciones, espera a que Google entregue el enlace y después actualiza la descripción y ubicación solicitando el envío a todos los asistentes. Si Google rechaza la creación de Meet o no termina a tiempo, se intenta eliminar el evento provisional y no se confirma la reserva. Si una operación queda incierta (por ejemplo, falla la actualización de invitaciones o la eliminación), se indica que hay que comprobar la reserva antes de reintentar. El correo depende de Google: no hay confirmación de entrega en bandeja de entrada.
 
 ## Contenido y publicación pendientes
 
-Faltan confirmar formación, trayectoria, precio, duración, horarios, enlace online y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.
+Faltan confirmar formación, trayectoria, precio, duración, horarios y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.
 
 Para incorporar la fotografía autorizada de Camila, agrega `public/camila.jpg`. El retrato se muestra automáticamente; mientras tanto se usan sus iniciales. La foto del chat no está disponible como archivo del repositorio.
 

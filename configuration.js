@@ -7,7 +7,6 @@ export const requiredSettings = [
   'AVAILABLE_WEEKDAYS',
   'AVAILABLE_HOURS',
   'SESSION_PRICE_CLP',
-  'ONLINE_SESSION_URL',
 ];
 
 export function missingSettings(environment = process.env) {
