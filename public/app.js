@@ -73,3 +73,54 @@ try {
   if (!config.demo) { $('mode-notice').textContent = 'Agenda conectada con Google Calendar'; $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Por videollamada`; $('faq-price').textContent = $('session-details').textContent; }
   renderCalendar(); await selectDate(config.today);
 } catch { $('month-label').textContent = 'Agenda no disponible'; slotMessage('No se pudo conectar con la agenda. Recarga la página para reintentar.'); $('prev-month').disabled = true; $('next-month').disabled = true; }
+
+// La animación CSS funciona sin JavaScript. La interacción solo se activa
+// con un puntero preciso y cuando no se ha solicitado movimiento reducido.
+const stage = $('motion-stage');
+const hero = $('inicio');
+const motionToggle = $('motion-toggle');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const finePointer = matchMedia('(pointer: fine)');
+const objects = [...stage.querySelectorAll('.float-object')];
+let motionPaused = false;
+let motionFrame = 0;
+function resetObjects() {
+  cancelAnimationFrame(motionFrame);
+  motionFrame = 0;
+  objects.forEach(object => { object.style.transform = ''; });
+}
+function updateMotionPreference() {
+  resetObjects();
+  motionToggle.hidden = reducedMotion.matches;
+  stage.classList.toggle('is-paused', motionPaused || reducedMotion.matches);
+}
+motionToggle.addEventListener('click', () => {
+  motionPaused = !motionPaused;
+  motionToggle.setAttribute('aria-pressed', String(motionPaused));
+  $('motion-label').textContent = motionPaused ? 'Activar movimiento' : 'Pausar movimiento';
+  updateMotionPreference();
+});
+hero.addEventListener('pointermove', event => {
+  if (motionPaused || reducedMotion.matches || !finePointer.matches || motionFrame) return;
+  const bounds = hero.getBoundingClientRect();
+  const x = (event.clientX - bounds.left) / bounds.width - .5;
+  const y = (event.clientY - bounds.top) / bounds.height - .5;
+  motionFrame = requestAnimationFrame(() => {
+    objects.forEach(object => {
+      const depth = Number(object.dataset.depth);
+      object.style.transform = `translate3d(${x * depth}px, ${y * depth}px, 0)`;
+    });
+    motionFrame = 0;
+  });
+}, { passive: true });
+hero.addEventListener('pointerleave', resetObjects);
+reducedMotion.addEventListener('change', updateMotionPreference);
+finePointer.addEventListener('change', resetObjects);
+document.addEventListener('visibilitychange', () => {
+  stage.classList.toggle('is-hidden', document.hidden);
+  if (document.hidden) resetObjects();
+});
+new IntersectionObserver(([entry]) => {
+  stage.classList.toggle('is-offscreen', !entry.isIntersecting);
+}, { threshold: 0 }).observe(hero);
+updateMotionPreference();

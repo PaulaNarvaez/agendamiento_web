@@ -2,6 +2,8 @@
 
 Sitio de atención psicológica exclusivamente telemática, con agenda y reservas conectables a Google Calendar. Node.js **22.9 o superior**, sin dependencias externas.
 
+La portada presenta el texto centrado y seis objetos abstractos animados. En escritorio responden suavemente al cursor. El control «Pausar movimiento» detiene la animación; se respeta la preferencia de movimiento reducido del sistema y se pausan los objetos fuera de pantalla.
+
 ## Abrir en Visual Studio Code
 
 Si ya clonaste el repositorio, abre una terminal en su carpeta y ejecuta:
