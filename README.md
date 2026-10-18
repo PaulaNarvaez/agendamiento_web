@@ -32,6 +32,12 @@ Sin la configuración completa, la agenda es una **demostración**: horarios de 
 
 Cuenta propuesta: **heatherroseyt@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. Todavía no se ha autorizado esta cuenta ni verificado el envío real de invitaciones.
 
+## Si sigue apareciendo «Agenda de demostración»
+
+En la terminal de VS Code, dentro de la carpeta del proyecto, ejecuta `npm.cmd run check:config` (Windows) o `npm run check:config` (otros sistemas). El informe muestra la ruta del `.env` esperado y únicamente los nombres de las variables vacías, nunca sus valores. Completa esos campos en tu computador, guarda el archivo, detén el servidor con Ctrl+C y vuelve a ejecutar `npm.cmd start`. No sobrescribas tu `.env` con la plantilla: perderías tu autorización de Google.
+
+La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días, horas o enlace online. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar en modo demo, el servidor también imprime automáticamente los campos que faltan.
+
 ## Conectar tu cuenta de Google (en tu propio computador)
 
 1. En [Google Cloud Console](https://console.cloud.google.com/), crea o selecciona un proyecto y habilita **Google Calendar API**.

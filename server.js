@@ -1,11 +1,11 @@
 import http from 'node:http';
 import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { missingSettings, configurationReport } from './configuration.js';
 import { bookingEvent, createGoogleClient } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
-const required = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_CALENDAR_ID', 'SESSION_DURATION_MINUTES', 'AVAILABLE_WEEKDAYS', 'AVAILABLE_HOURS', 'SESSION_PRICE_CLP', 'ONLINE_SESSION_URL'];
-const live = required.every(name => Boolean(process.env[name]));
+const live = missingSettings().length === 0;
 const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
 const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
 const hours = [...new Set((process.env.AVAILABLE_HOURS || '09:00,10:00,11:00,15:00,16:00,17:00').split(','))].sort();
@@ -82,5 +82,6 @@ server.listen(Number(process.env.PORT || 3000), '0.0.0.0', () => {
   console.log(`\nCamila Leiva | Psicología online\n`);
   console.log(`  Local: http://localhost:${server.address().port}`);
   console.log(`  Estado: ${live ? 'Google Calendar configurado' : 'Demostración (sin reservas reales)'}`);
+  if (!live) console.log(`\n${configurationReport()}`);
   console.log('\nAbre la URL en tu navegador. Para detener: Ctrl+C.\n');
 });

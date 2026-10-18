@@ -10,6 +10,7 @@
     "start": "node --env-file-if-exists=.env server.js",
     "dev": "node --env-file-if-exists=.env --watch server.js",
     "test": "node --test",
-    "connect:google": "node --env-file-if-exists=.env scripts/connect-google.js"
+    "connect:google": "node --env-file-if-exists=.env scripts/connect-google.js",
+    "check:config": "node --env-file-if-exists=.env scripts/check-config.js"
   }
 }
