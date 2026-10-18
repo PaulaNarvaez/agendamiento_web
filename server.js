@@ -1,29 +1,17 @@
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { bookingEvent, createGoogleClient } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
-const required = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_CALENDAR_ID', 'SESSION_DURATION_MINUTES', 'AVAILABLE_WEEKDAYS', 'AVAILABLE_HOURS', 'SESSION_PRICE_CLP', 'SESSION_LOCATION', 'ONLINE_SESSION_URL'];
+const required = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_CALENDAR_ID', 'SESSION_DURATION_MINUTES', 'AVAILABLE_WEEKDAYS', 'AVAILABLE_HOURS', 'SESSION_PRICE_CLP', 'ONLINE_SESSION_URL'];
 const live = required.every(name => Boolean(process.env[name]));
 const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
 const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
 const hours = [...new Set((process.env.AVAILABLE_HOURS || '09:00,10:00,11:00,15:00,16:00,17:00').split(','))].sort();
 if (!Number.isInteger(duration) || duration < 15 || duration > 180 || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6) || hours.some(hour => !/^([01]\d|2[0-3]):[0-5]\d$/.test(hour))) throw new Error('Configuración de horarios no válida');
 if (live && (!Number.isFinite(Number(process.env.SESSION_PRICE_CLP)) || Number(process.env.SESSION_PRICE_CLP) < 0 || !process.env.ONLINE_SESSION_URL.startsWith('https://'))) throw new Error('Precio o enlace online no válido');
-let token;
-let expires = 0;
-async function google(path, options = {}) {
-  if (Date.now() > expires) {
-    const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET, refresh_token: process.env.GOOGLE_REFRESH_TOKEN, grant_type: 'refresh_token' }), signal: AbortSignal.timeout(15000) });
-    if (!response.ok) throw new Error('Google authentication failed');
-    const data = await response.json();
-    token = data.access_token;
-    expires = Date.now() + (data.expires_in - 60) * 1000;
-  }
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/${path}`, { ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error('Google calendar request failed');
-  return response.json();
-}
+const google = createGoogleClient({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN });
 async function available(date) {
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   if (!weekdays.includes(day)) return [];
@@ -38,14 +26,14 @@ let bookingQueue = Promise.resolve();
 const rates = new Map();
 function json(res, status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
 const root = fileURLToPath(new URL('./public/', import.meta.url));
-const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/camila.jpg': ['camila.jpg','image/jpeg'] };
+const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/camila.jpg': ['camila.jpg','image/jpeg'], '/sculpture.svg': ['sculpture.svg', 'image/svg+xml'] };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   try {
     const url = new URL(req.url, 'http://localhost');
-    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { demo: !live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, location: live ? process.env.SESSION_LOCATION : null, timeZone: zone, today: localDate() });
+    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { demo: !live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: await access(root + 'camila.jpg').then(() => true, () => false), timeZone: zone, today: localDate() });
     if (req.method === 'GET' && url.pathname === '/api/availability') {
       const date = url.searchParams.get('date');
       if (!validDate(date) || date < localDate() || Date.parse(date) > Date.now() + 90 * 86400000) return json(res, 400, { error: 'Elige una fecha entre hoy y los próximos 90 días.' });
@@ -67,9 +55,9 @@ const server = http.createServer(async (req, res) => {
       const action = bookingQueue.then(async () => {
         const slot = (await available(input.date)).find(s => s.hour === input.hour);
         if (!slot) return json(res, 409, { error: 'Este horario ya no está disponible. Elige otro.' });
-        const event = await google(`calendars/${encodeURIComponent(process.env.GOOGLE_CALENDAR_ID)}/events?sendUpdates=all`, { method: 'POST', body: JSON.stringify({ summary: 'Sesión · Camila Leiva', start: { dateTime: slot.start, timeZone: zone }, end: { dateTime: slot.end, timeZone: zone }, attendees: [{ email: input.email, displayName: input.name.trim() }], visibility: 'private', location: input.mode === 'online' ? process.env.ONLINE_SESSION_URL : process.env.SESSION_LOCATION, description: `Sesión ${input.mode}. Reserva realizada en el sitio de Camila Leiva.` }) });
+        const event = await google(`calendars/${encodeURIComponent(process.env.GOOGLE_CALENDAR_ID)}/events?sendUpdates=all`, { method: 'POST', body: JSON.stringify(bookingEvent(input, slot, process.env.ONLINE_SESSION_URL)) });
         if (!event.id) throw new Error('Event creation unconfirmed');
-        return json(res, 201, { booked: true, start: slot.start, message: 'Tu reserva está registrada. Google Calendar enviará una invitación a tu correo.' });
+        return json(res, 201, { booked: true, start: slot.start, onlineUrl: process.env.ONLINE_SESSION_URL, message: 'Tu reserva está registrada. Google Calendar enviará una invitación a tu correo.' });
       });
       bookingQueue = action.catch(() => {});
       return await action;
@@ -86,4 +74,13 @@ const server = http.createServer(async (req, res) => {
     json(res, 503, { error: 'No pudimos confirmar la operación. Antes de reintentar, revisa tu correo para evitar duplicados.' });
   }
 });
-server.listen(Number(process.env.PORT || 3000), '0.0.0.0', () => console.log(`Camila Leiva · puerto ${process.env.PORT || 3000} · ${live ? 'Google Calendar' : 'modo demostración'}`));
+server.on('error', error => {
+  console.error(error.code === 'EADDRINUSE' ? `El puerto ${process.env.PORT || 3000} está ocupado. Cierra la otra instancia o cambia PORT en .env.` : 'No se pudo iniciar el servidor.');
+  process.exitCode = 1;
+});
+server.listen(Number(process.env.PORT || 3000), '0.0.0.0', () => {
+  console.log(`\nCamila Leiva | Psicología online\n`);
+  console.log(`  Local: http://localhost:${server.address().port}`);
+  console.log(`  Estado: ${live ? 'Google Calendar configurado' : 'Demostración (sin reservas reales)'}`);
+  console.log('\nAbre la URL en tu navegador. Para detener: Ctrl+C.\n');
+});

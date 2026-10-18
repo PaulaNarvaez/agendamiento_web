@@ -1,44 +1,83 @@
-# Camila Leiva · Agendamiento web
+# Camila Leiva | Psicología online
 
-Web adaptable a móvil y escritorio con perfil, agenda y selección online/presencial. Node.js 22 o superior, sin dependencias externas.
+Sitio de atención psicológica exclusivamente telemática, con agenda y reservas conectables a Google Calendar. Node.js **22.9 o superior**, sin dependencias externas.
 
-## Ejecutar
+## Abrir en Visual Studio Code
+
+Si ya clonaste el repositorio, abre una terminal en su carpeta y ejecuta:
+
+```sh
+git pull origin main
+npm start
+```
+
+El terminal mostrará una dirección como `http://localhost:3000`. Haz Ctrl+clic en ella o cópiala al navegador. El proceso debe permanecer abierto. Detener con Ctrl+C. No uses Live Server ni abras `index.html` directamente: las reservas necesitan el servidor Node.
+
+Para una primera instalación:
 
 ```sh
 git clone https://github.com/PaulaNarvaez/agendamiento_web.git
 cd agendamiento_web
 code .
-npm test
 npm start
 ```
 
-Después de `npm start`, abre http://localhost:3000 en tu navegador local. Abrir `index.html` directamente o ver el repositorio en GitHub no ejecuta la aplicación.
+`npm run dev` reinicia el servidor al editar. `.env` se carga automáticamente al iniciar; al cambiar sus valores reinicia el servidor. Si el puerto está ocupado, define otro `PORT` en `.env`, por ejemplo `PORT=3001`. El terminal imprimirá el puerto utilizado.
 
-Puerto 3000, configurable mediante `PORT`. `npm run dev` reinicia el servidor al editar. Usar HTTPS detrás de un proxy en producción.
+## Estado de las reservas
 
-## Estado actual
+Sin la configuración completa, la agenda es una **demostración**: horarios de ejemplo, sin guardar datos de pacientes, crear eventos ni enviar invitaciones. El sitio identifica este estado. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.
 
-Agenda de **demostración**: horarios de ejemplo, sin reservas reales ni correos. El formulario demo no transmite ni guarda datos personales. Faltan cuenta Google, autorización del calendario, trayectoria, duración, precio, dirección, enlace online y condiciones de cancelación.
+Cuenta propuesta: **heatherroseyt@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. Todavía no se ha autorizado esta cuenta ni verificado el envío real de invitaciones.
 
-La foto adjunta al chat no está disponible como archivo en el entorno. Colocar la fotografía autorizada en `public/camila.jpg` activa el retrato automáticamente. Se muestran iniciales mientras tanto.
+## Conectar tu cuenta de Google (en tu propio computador)
 
-## Google Calendar y correo
+1. En [Google Cloud Console](https://console.cloud.google.com/), crea o selecciona un proyecto y habilita **Google Calendar API**.
+2. Configura la pantalla de consentimiento OAuth en Google Auth Platform. Para una cuenta Gmail personal el público es externo. Mientras la aplicación esté en modo prueba, agrega `heatherroseyt@gmail.com` como usuario de prueba. Solicita los permisos `openid`, `email`, `https://www.googleapis.com/auth/calendar.events` y `https://www.googleapis.com/auth/calendar.freebusy`.
+3. Crea un cliente OAuth de tipo **Aplicación de escritorio**. Copia su ID y secreto al archivo `.env` local, usando `.env.example` como modelo. Puedes crear la copia desde el explorador de VS Code. No subas `.env` a Git ni compartas contraseñas o tokens.
+4. Conserva `GOOGLE_ACCOUNT_EMAIL=heatherroseyt@gmail.com` y `GOOGLE_CALENDAR_ID=heatherroseyt@gmail.com` para usar tu calendario principal. Después ejecuta:
 
-1. Camila debe crear una cuenta en https://accounts.google.com/signup y activar recuperación y verificación en dos pasos. La web no crea cuentas ni pide contraseñas. Una dirección con dominio propio requiere dominio y Google Workspace.
-2. Crear un calendario privado para la consulta. Copiar su ID desde ajustes de Calendar. Los bloqueos personales deben reflejarse en ese calendario: la web solo consulta ese calendario.
-3. En Google Cloud, habilitar Calendar API, configurar consentimiento OAuth y cliente OAuth. Camila debe autorizar los alcances `https://www.googleapis.com/auth/calendar.events` y `https://www.googleapis.com/auth/calendar.freebusy` y obtener un refresh token con acceso offline. Google puede exigir verificación para una app externa; los tokens de apps en modo prueba pueden caducar en siete días. Usar autorización permanente antes de abrir reservas.
-4. Configurar de forma segura las variables de `.env.example`. Nunca escribir secretos en Git ni enviarlos por chat. Se leen del proceso; no se carga `.env` automáticamente. Localmente se puede usar `node --env-file=.env server.js` con un archivo privado.
-5. Definir duración, precio, dirección presencial, enlace HTTPS online, días (0 domingo a 6 sábado, separados por coma) y horas (`HH:MM`, separadas por coma). Todos son necesarios para activar el modo real. Evitar horarios que se solapen dada la duración.
-6. Reiniciar. `/api/config` debe indicar `demo: false`. Realizar una reserva con datos propios y verificar evento privado, invitación recibida y bloqueo del horario. Esta integración real **no fue probada**: no hay cuenta autorizada.
+   ```sh
+   npm run connect:google
+   ```
 
-El servidor consulta `freeBusy` y vuelve a comprobar el horario al reservar. Crea un evento privado con el paciente como asistente y `sendUpdates=all`: Google solicita el envío de la invitación. No hay un segundo servicio SMTP ni garantía de entrega en bandeja de entrada. Camila ve las reservas en Calendar y debe activar notificaciones por correo en su calendario para recibir avisos. El enlace online es fijo, no se generan enlaces Meet individuales.
+5. Abre el enlace de Google que imprime el terminal **en el mismo computador**. Inicia sesión en la cuenta indicada y concede los permisos. El asistente comprueba la cuenta autorizada y guarda el refresh token en `.env` sin mostrarlo. Usa un retorno local en el puerto 53682 y expira a los diez minutos. Este asistente es para desarrollo local, no es una ruta pública del sitio.
+6. Define en `.env` la duración, valor, días, horas y enlace de videollamada. No se incluyen valores clínicos ni comerciales inventados:
 
-## Antes de abrir al público
+   | Variable | Contenido |
+   | --- | --- |
+   | `SESSION_DURATION_MINUTES` | Duración de la sesión en minutos, de 15 a 180 |
+   | `SESSION_PRICE_CLP` | Valor en pesos chilenos, sin separadores |
+   | `AVAILABLE_WEEKDAYS` | Días separados por coma: 0 domingo, 1 lunes … 6 sábado |
+   | `AVAILABLE_HOURS` | Horas de inicio `HH:MM`, separadas por coma, horario de Chile |
+   | `ONLINE_SESSION_URL` | Enlace HTTPS de videollamada autorizado por Camila |
 
-Confirmar y actualizar perfil profesional, duración, valor y política de cambios/cancelaciones. Revisar y publicar aviso de privacidad y condiciones. Se piden solo nombre, correo, modalidad y consentimiento; no hay información clínica ni pagos. Las reservas reales se guardan en Google Calendar; no hay base local ni auditoría separada de consentimiento.
+7. Reinicia `npm start`. La página debe mostrar que la agenda está conectada. Comprueba con datos propios una reserva: evento en tu calendario, invitación recibida por el paciente, fecha/hora/profesional/enlace correctos y bloqueo del mismo horario. Esta prueba requiere autorización real y aún está pendiente.
 
-Usar **una sola instancia**: la cola serializa reservas de la web, pero Google no ofrece bloqueo transaccional frente a cambios manuales o apps externas. Múltiples instancias requieren una base con exclusión e idempotencia. El límite por IP vive en memoria y debe complementarse con controles del proveedor al desplegar. Si un envío termina con timeout, revisar Calendar antes de repetir para evitar duplicados. No se ha publicado el sitio ni probado envío real de correo.
+En modo prueba de Google, los refresh tokens de apps externas pueden caducar a los siete días. Antes de abrir reservas públicas, completa los requisitos de publicación/verificación de Google. No uses una autorización temporal como conexión permanente.
 
-## Verificación
+### Qué se envía al paciente y qué ves tú
 
-`npm test` comprueba horario chileno en invierno/verano, cruces de eventos, horas pasadas, datos y API demo. No requiere secretos ni envía correos.
+El servidor consulta la disponibilidad del calendario configurado y vuelve a comprobarla al reservar. Crea un evento **privado** llamado «Sesión online · Camila Leiva, psicóloga», con fecha, inicio y término en `America/Santiago`, modalidad telemática, instrucciones y enlace de conexión. Añade al paciente como asistente y solicita a Google el envío de la invitación con `sendUpdates=all`.
+
+El evento aparece en el calendario de `heatherroseyt@gmail.com` cuando se usa ese ID. Los bloqueos que crees en ese mismo calendario impiden reservas superpuestas. Si usas un calendario secundario, copia su ID a `GOOGLE_CALENDAR_ID`, asegúrate de que tu cuenta tenga permiso de edición y refleja allí todos los bloqueos relevantes.
+
+Para recibir avisos en tu propio correo, configura las notificaciones de ese calendario en Google Calendar. Cada paciente controla las notificaciones de su calendario. Los recordatorios configurados en el evento corresponden a la cuenta organizadora; no sustituyen ni garantizan los recordatorios del paciente. Las invitaciones dependen de Google y pueden llegar a spam: no hay un servicio SMTP separado ni seguimiento de entrega.
+
+El enlace online configurado es fijo. No se crean automáticamente enlaces Google Meet individuales.
+
+## Contenido y publicación pendientes
+
+Faltan confirmar formación, trayectoria, precio, duración, horarios, enlace online y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.
+
+Para incorporar la fotografía autorizada de Camila, agrega `public/camila.jpg`. El retrato se muestra automáticamente; mientras tanto se usan sus iniciales. La foto del chat no está disponible como archivo del repositorio.
+
+En producción usar HTTPS y **una sola instancia**. La cola evita reservas simultáneas dentro de esa instancia, pero no bloquea cambios manuales o aplicaciones externas en Google. Múltiples instancias requieren persistencia e idempotencia compartidas. Ante un timeout al crear un evento, comprobar Calendar antes de repetir para evitar duplicados. El límite por IP vive en memoria y debe complementarse con controles del proveedor. El sitio aún no está desplegado públicamente.
+
+## Pruebas
+
+```sh
+npm test
+```
+
+Incluyen horarios de Chile, cruces de eventos, validación exclusivamente online, API de demostración y solicitudes de Google con respuestas simuladas. Las pruebas simuladas nunca envían invitaciones ni sustituyen la validación con una cuenta real.

@@ -3,6 +3,13 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "engines": { "node": ">=22" },
-  "scripts": { "start": "node server.js", "dev": "node --watch server.js", "test": "node --test" }
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test",
+    "connect:google": "node --env-file-if-exists=.env scripts/connect-google.js"
+  }
 }

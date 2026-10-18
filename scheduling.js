@@ -22,7 +22,7 @@ export function slotsFor(date, hours, duration, busy = [], now = new Date()) {
     .map(slot => ({ hour: slot.hour, start: slot.start.toISOString(), end: slot.end.toISOString() }));
 }
 export function validateBooking(input) {
-  return typeof input.name === 'string' && input.name.trim().length >= 2 && input.name.length <= 100
+  return input !== null && typeof input === 'object' && typeof input.name === 'string' && input.name.trim().length >= 2 && input.name.length <= 100
     && typeof input.email === 'string' && input.email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)
-    && validDate(input.date) && /^\d{2}:\d{2}$/.test(input.hour || '') && ['online', 'presencial'].includes(input.mode) && input.consent === true;
+    && validDate(input.date) && /^\d{2}:\d{2}$/.test(input.hour || '') && input.mode === 'online' && input.consent === true;
 }

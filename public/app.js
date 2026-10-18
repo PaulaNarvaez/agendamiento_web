@@ -27,13 +27,13 @@ function slotMessage(message) { const p = document.createElement('p'); p.textCon
 async function selectDate(date) {
   selectedDate = date; selectedHour = null; $('continue').disabled = true; renderCalendar();
   $('selected-label').textContent = new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-  slotMessage('Buscando tu momento…'); const version = ++requestVersion;
+  slotMessage('Consultando disponibilidad…'); const version = ++requestVersion;
   try {
     const response = await fetch(`/api/availability?date=${date}`); const data = await response.json();
     if (version !== requestVersion) return;
     if (!response.ok) throw new Error(data.error);
     $('slots').replaceChildren();
-    if (!data.slots.length) return slotMessage('No hay horarios disponibles para este día. Prueba otra fecha ♡');
+    if (!data.slots.length) return slotMessage('No hay horarios disponibles para este día. Selecciona otra fecha.');
     for (const slot of data.slots) {
       const button = document.createElement('button'); button.type = 'button'; button.textContent = slot.hour; button.setAttribute('aria-pressed', 'false');
       button.addEventListener('click', () => {
@@ -57,8 +57,10 @@ $('booking-form').addEventListener('submit', async event => {
   if (config.demo) { $('form-status').textContent = '¡Así se verá el proceso! No se ha realizado una reserva ni enviado un correo. Tus datos no se han guardado.'; return; }
   $('submit').disabled = true; $('form-status').textContent = 'Confirmando tu reserva…';
   try {
-    const response = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('name').value.trim(), email: $('email').value.trim(), date: selectedDate, hour: selectedHour, mode: $('mode').value, consent: $('consent').checked }) });
+    const response = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('name').value.trim(), email: $('email').value.trim(), date: selectedDate, hour: selectedHour, mode: 'online', consent: $('consent').checked }) });
     const data = await response.json(); if (!response.ok) throw new Error(data.error);
+    $('session-link').hidden = true;
+    if (data.onlineUrl?.startsWith('https://')) { $('session-link').href = data.onlineUrl; $('session-link').hidden = false; }
     $('success-text').textContent = `${formatDate(selectedDate)} a las ${selectedHour}. ${data.message}`; showStep('success'); $('booking-form').reset();
   } catch (error) { $('form-status').textContent = error.message || 'No se pudo confirmar la reserva. Revisa tu correo antes de reintentar.'; }
   finally { $('submit').disabled = false; }
@@ -66,7 +68,8 @@ $('booking-form').addEventListener('submit', async event => {
 const portrait = $('portrait'); portrait.addEventListener('load', () => { portrait.hidden = false; $('portrait-placeholder').hidden = true; });
 try {
   const response = await fetch('/api/config'); if (!response.ok) throw new Error(); config = await response.json();
+  if (config.hasPortrait) portrait.src = portrait.dataset.src;
   displayed = new Date(`${config.today.slice(0,7)}-01T12:00:00Z`);
-  if (!config.demo) { $('mode-notice').textContent = 'Agenda conectada con Google Calendar'; $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Online y presencial`; $('faq-price').textContent = $('session-details').textContent; }
+  if (!config.demo) { $('mode-notice').textContent = 'Agenda conectada con Google Calendar'; $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Por videollamada`; $('faq-price').textContent = $('session-details').textContent; }
   renderCalendar(); await selectDate(config.today);
 } catch { $('month-label').textContent = 'Agenda no disponible'; slotMessage('No se pudo conectar con la agenda. Recarga la página para reintentar.'); $('prev-month').disabled = true; $('next-month').disabled = true; }
