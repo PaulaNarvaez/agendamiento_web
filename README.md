@@ -36,7 +36,7 @@ Cuenta propuesta: **heatherroseyt@gmail.com**. El correo no es una credencial y 
 
 1. En [Google Cloud Console](https://console.cloud.google.com/), crea o selecciona un proyecto y habilita **Google Calendar API**.
 2. Configura la pantalla de consentimiento OAuth en Google Auth Platform. Para una cuenta Gmail personal el público es externo. Mientras la aplicación esté en modo prueba, agrega `heatherroseyt@gmail.com` como usuario de prueba. Solicita los permisos `openid`, `email`, `https://www.googleapis.com/auth/calendar.events` y `https://www.googleapis.com/auth/calendar.freebusy`.
-3. Crea un cliente OAuth de tipo **Aplicación de escritorio**. Copia su ID y secreto al archivo `.env` local, usando `.env.example` como modelo. Puedes crear la copia desde el explorador de VS Code. No subas `.env` a Git ni compartas contraseñas o tokens.
+3. Crea un cliente OAuth de tipo **Aplicación de escritorio**. El ID de cliente proporcionado ya está incluido en `.env.example`. Copia el secreto completo al archivo `.env` local, usando `.env.example` como modelo. Si ya tienes un `.env`, actualiza solo `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` sin sobrescribir tus otros valores. Puedes crear la copia desde el explorador de VS Code. No subas `.env` a Git ni compartas contraseñas o tokens.
 4. Conserva `GOOGLE_ACCOUNT_EMAIL=heatherroseyt@gmail.com` y `GOOGLE_CALENDAR_ID=heatherroseyt@gmail.com` para usar tu calendario principal. Después ejecuta:
 
    ```sh
