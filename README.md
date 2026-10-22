@@ -77,7 +77,17 @@ Para recibir avisos en tu propio correo, configura las notificaciones de ese cal
 
 Cada reserva solicita un **Google Meet distinto** mediante `conferenceDataVersion=1` y un `requestId` nuevo. No necesitas crear reuniones manualmente ni configurar `ONLINE_SESSION_URL`; si esa variable existe en un `.env` antiguo, se ignora. La cuenta y el calendario autorizados deben permitir crear Google Meet.
 
-La aplicación crea primero un evento provisional sin solicitar invitaciones, espera a que Google entregue el enlace y después actualiza la descripción y ubicación solicitando el envío a todos los asistentes. Si Google rechaza la creación de Meet o no termina a tiempo, se intenta eliminar el evento provisional y no se confirma la reserva. Si una operación queda incierta (por ejemplo, falla la actualización de invitaciones o la eliminación), se indica que hay que comprobar la reserva antes de reintentar. El correo depende de Google: no hay confirmación de entrega en bandeja de entrada.
+La aplicación crea primero un evento provisional **sin invitados**, espera a que Google entregue el enlace y después añade al paciente, actualiza la descripción y ubicación y solicita el envío a todos los asistentes. Así el paciente recibe una invitación inicial con el Meet listo. Si Google rechaza la creación de Meet o no termina a tiempo, se intenta eliminar el evento provisional y no se confirma la reserva. Si una operación queda incierta (por ejemplo, falla la actualización de invitaciones o la eliminación), se indica que hay que comprobar la reserva antes de reintentar. El correo depende de Google: no hay confirmación de entrega en bandeja de entrada.
+
+## Si el evento aparece pero la invitación falla
+
+No repitas la reserva: el evento puede existir aunque falle una etapa posterior. La web muestra «Reserva pendiente de revisión» si se creó el evento pero no se confirmó el envío. La aplicación no garantiza entrega del correo ni la verifica.
+
+En el terminal del servidor busca la línea `[Agenda] etapa=...; HTTP=...; motivo=...`. Contiene únicamente códigos, nunca tokens, nombres de pacientes o respuestas completas de Google. Identifica si falló crear el evento, generar Meet, revertir un evento provisional o enviar la invitación.
+
+Ejecuta `npm.cmd run check:google` para verificar autorización/disponibilidad y contar los eventos recientes con Meet e invitados. Es de solo lectura, no muestra datos de pacientes, no envía correos y revisa como máximo los 50 próximos eventos.
+
+Para una reserva ya creada, abre ese evento en Google Calendar, comprueba el enlace de Meet y el correo del paciente en Invitados, guarda y elige enviar invitaciones si Google lo solicita. Esto permite gestionar ese evento sin duplicarlo. Los eventos anteriores no se reparan automáticamente al actualizar el código.
 
 ## Contenido y publicación pendientes
 

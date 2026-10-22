@@ -60,10 +60,12 @@ $('booking-form').addEventListener('submit', async event => {
   $('submit').disabled = true; $('form-status').textContent = 'Confirmando tu reserva…';
   try {
     const response = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('name').value.trim(), email: $('email').value.trim(), date: selectedDate, hour: selectedHour, mode: 'online', consent: $('consent').checked }) });
-    const data = await response.json(); if (!response.ok) throw new Error(data.error);
+    const data = await response.json();
+    if (!response.ok && !data.reservationNeedsReview) throw new Error(data.error);
+    $('success-title').textContent = data.reservationNeedsReview ? 'Reserva pendiente de revisión.' : 'Reserva confirmada.';
     $('session-link').hidden = true;
     if (data.onlineUrl?.startsWith('https://')) { $('session-link').href = data.onlineUrl; $('session-link').hidden = false; }
-    $('success-text').textContent = `${formatDate(selectedDate)} a las ${selectedHour}. ${data.message}`; showStep('success'); $('booking-form').reset();
+    $('success-text').textContent = `${formatDate(selectedDate)} a las ${selectedHour}. ${data.reservationNeedsReview ? data.error : data.message}`; showStep('success'); $('booking-form').reset();
   } catch (error) { $('form-status').textContent = error.message || 'No se pudo confirmar la reserva. Revisa tu correo antes de reintentar.'; }
   finally { $('submit').disabled = false; }
 });

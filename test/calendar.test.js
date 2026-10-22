@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bookingEvent, createGoogleClient, reserveWithMeet } from '../calendar.js';
+import { bookingEvent, createGoogleClient, reserveWithMeet, googleDiagnostic } from '../calendar.js';
 
 const slot = { start: '2026-12-07T12:00:00.000Z', end: '2026-12-07T12:50:00.000Z' };
 test('la invitación incluye profesional, horario de Chile, modalidad y conexión', () => {
@@ -46,6 +46,7 @@ test('espera el Meet antes de enviar invitaciones y genera enlaces distintos', a
       assert.match(path, /conferenceDataVersion=1&sendUpdates=none/);
       const body = JSON.parse(options.body);
       assert.equal(body.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
+      assert.equal(body.attendees, undefined);
       const id = String(++sequence);
       events.set(id, body);
       return { id, conferenceData: { createRequest: { status: { statusCode: 'pending' } } } };
@@ -54,6 +55,7 @@ test('espera el Meet antes de enviar invitaciones y genera enlaces distintos', a
     if (options.method === 'PATCH') {
       const body = JSON.parse(options.body);
       assert.match(path, /sendUpdates=all/);
+      assert.equal(body.attendees[0].email, 'ana@example.com');
       assert.equal(body.location, `https://meet.google.com/unique-${id}`);
       assert.ok(body.description.includes(body.location));
       return { id };
@@ -104,4 +106,28 @@ test('no cancela el evento si la notificación final queda incierta', async () =
   };
   await assert.rejects(reserveWithMeet(google, 'calendar', { name: 'Ana', email: 'ana@example.com' }, slot), /Notification update timed out/);
   assert.deepEqual(methods, ['POST','PATCH']);
+});
+test('diagnóstico de error de Google conserva etapa y código sin incluir mensajes privados', async () => {
+  let calls = 0;
+  const google = createGoogleClient({}, async () => ++calls === 1
+    ? Response.json({ access_token:'fake', expires_in:3600 })
+    : Response.json({ error:{ message:'private-secret-and-patient-email', errors:[{reason:'forbidden'}] } }, {status:403}));
+  await assert.rejects(google('calendars/calendar/events', {method:'PATCH'}), error => {
+    error.phase='enviar_invitacion';
+    assert.equal(googleDiagnostic(error), '[Agenda] etapa=enviar_invitacion; HTTP=403; motivo=forbidden');
+    assert.ok(!String(error).includes('private-secret-and-patient-email'));
+    return true;
+  });
+});
+test('fallo de invitación informa que hay que revisar el evento y conserva su Meet', async () => {
+  const google=async (path, options={})=>{
+    if(options.method==='POST')return {id:'event',hangoutLink:'https://meet.google.com/unique-event'};
+    const error=new Error('Google calendar request failed');error.httpStatus=403;error.googleReason='forbidden';throw error;
+  };
+  await assert.rejects(reserveWithMeet(google,'calendar',{name:'Ana',email:'ana@example.com'},slot),error=>{
+    assert.equal(error.reservationNeedsReview,true);
+    assert.equal(error.phase,'enviar_invitacion');
+    assert.equal(error.onlineUrl,'https://meet.google.com/unique-event');
+    return true;
+  });
 });

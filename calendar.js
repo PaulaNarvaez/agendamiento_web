@@ -2,6 +2,28 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { zone } from './scheduling.js';
 
+const safeReasons = new Set(['invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied', 'authError', 'insufficientPermissions', 'forbidden', 'notFound', 'badRequest', 'invalid', 'required', 'rateLimitExceeded', 'userRateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded', 'backendError', 'internalError']);
+async function apiError(response, phase) {
+  const body = await response.json().catch(() => ({}));
+  const reason = typeof body.error === 'string' ? body.error : body.error?.errors?.[0]?.reason;
+  const error = new Error(phase === 'autorizacion_google' ? 'Google authentication failed' : 'Google calendar request failed');
+  error.httpStatus = response.status;
+  error.googleReason = safeReasons.has(reason) ? reason : 'unknown';
+  if (phase) error.phase = phase;
+  return error;
+}
+export function googleDiagnostic(error) {
+  const phases = new Set(['autorizacion_google', 'crear_evento', 'generar_meet', 'eliminar_evento_provisional', 'enviar_invitacion']);
+  const phase = phases.has(error.phase) ? error.phase : 'consultar_agenda';
+  const status = Number.isInteger(error.httpStatus) ? error.httpStatus : 'sin_respuesta';
+  const reason = safeReasons.has(error.googleReason) ? error.googleReason : 'unknown';
+  return `[Agenda] etapa=${phase}; HTTP=${status}; motivo=${reason}`;
+}
+function atPhase(error, phase) {
+  if (!error.phase) error.phase = phase;
+  return error;
+}
+
 export function createGoogleClient(config, request = fetch) {
   let token;
   let expires = 0;
@@ -12,7 +34,7 @@ export function createGoogleClient(config, request = fetch) {
         body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, refresh_token: config.refreshToken, grant_type: 'refresh_token' }),
         signal: AbortSignal.timeout(15000),
       });
-      if (!response.ok) throw new Error('Google authentication failed');
+      if (!response.ok) throw await apiError(response, 'autorizacion_google');
       const data = await response.json();
       if (!data.access_token || !Number.isFinite(data.expires_in)) throw new Error('Google authentication incomplete');
       token = data.access_token;
@@ -23,7 +45,7 @@ export function createGoogleClient(config, request = fetch) {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(15000),
     });
-    if (!response.ok) throw new Error('Google calendar request failed');
+    if (!response.ok) throw await apiError(response);
     return response.status === 204 ? null : response.json();
   };
 }
@@ -67,7 +89,13 @@ export function meetingLink(event) {
 export async function reserveWithMeet(google, calendarId, input, slot, wait = delay) {
   const collection = `calendars/${encodeURIComponent(calendarId)}/events`;
   const body = bookingEvent(input, slot);
-  let event = await google(`${collection}?conferenceDataVersion=1&sendUpdates=none`, { method: 'POST', body: JSON.stringify(body) });
+  // El paciente se añade al confirmar, con el Meet listo y sendUpdates=all.
+  // Así recibe una invitación inicial, no solo una actualización de un evento
+  // al que había sido añadido con las notificaciones desactivadas.
+  const { attendees, ...provisional } = body;
+  let event;
+  try { event = await google(`${collection}?conferenceDataVersion=1&sendUpdates=none`, { method: 'POST', body: JSON.stringify(provisional) }); }
+  catch (error) { throw atPhase(error, 'crear_evento'); }
   if (!event?.id) throw new Error('Event creation unconfirmed');
   const path = `${collection}/${encodeURIComponent(event.id)}`;
   let onlineUrl;
@@ -81,17 +109,27 @@ export async function reserveWithMeet(google, calendarId, input, slot, wait = de
       await wait([150, 300, 600, 1200, 1800][attempt]);
       event = await google(path);
     }
-  } catch {
+  } catch (meetError) {
     // Si la reversión falla, no se declara cancelada una reserva incierta.
-    await google(`${path}?sendUpdates=none`, { method: 'DELETE' });
+    try { await google(`${path}?sendUpdates=none`, { method: 'DELETE' }); }
+    catch (error) { error.reservationNeedsReview = true; throw atPhase(error, 'eliminar_evento_provisional'); }
     const error = new Error('Meet unavailable; provisional event removed');
     error.code = 'MEET_UNAVAILABLE';
+    error.phase = 'generar_meet';
+    error.httpStatus = meetError.httpStatus;
+    error.googleReason = meetError.googleReason;
     throw error;
   }
-  const confirmed = await google(`${path}?conferenceDataVersion=1&sendUpdates=all`, {
-    method: 'PATCH',
-    body: JSON.stringify({ location: onlineUrl, description: body.description.replace('El acceso de Google Meet se incluirá en esta invitación.', `Acceso a la sesión: ${onlineUrl}`) }),
-  });
-  if (!confirmed?.id) throw new Error('Invitation update unconfirmed');
+  try {
+    const confirmed = await google(`${path}?conferenceDataVersion=1&sendUpdates=all`, {
+      method: 'PATCH',
+      body: JSON.stringify({ attendees, location: onlineUrl, description: body.description.replace('El acceso de Google Meet se incluirá en esta invitación.', `Acceso a la sesión: ${onlineUrl}`) }),
+    });
+    if (!confirmed?.id) throw new Error('Invitation update unconfirmed');
+  } catch (error) {
+    error.reservationNeedsReview = true;
+    error.onlineUrl = onlineUrl;
+    throw atPhase(error, 'enviar_invitacion');
+  }
   return { onlineUrl };
 }

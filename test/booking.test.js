@@ -21,13 +21,15 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
         event = JSON.parse(options.body);
         assert.match(event.description, /Camila Leiva/);
         assert.equal(event.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
-        assert.equal(event.attendees[0].email, 'patient@example.com');
+        assert.equal(event.attendees, undefined);
         return Response.json({ id: 'mock-event', conferenceData: { createRequest: { status: { statusCode: 'pending' } } } });
       }
       if (options?.method === 'PATCH') {
         assert.ok(url.endsWith('/events/mock-event?conferenceDataVersion=1&sendUpdates=all'));
         const update = JSON.parse(options.body);
         assert.equal(update.location, 'https://meet.google.com/unique-session');
+        if (update.attendees[0].email === 'fail@example.com') return Response.json({ error: { errors: [{ reason: 'forbidden' }] } }, { status: 403 });
+        assert.equal(update.attendees[0].email, 'patient@example.com');
         assert.ok(update.description.includes(update.location));
         return Response.json({ id: 'mock-event' });
       }
@@ -61,4 +63,10 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
   assert.equal(result.onlineUrl, 'https://meet.google.com/unique-session');
   const available = await (await fetch(base+'/api/availability?date='+input.date)).json();
   assert.deepEqual(available.slots.map(s=>s.hour), ['10:00']);
+  const failedInvitation = await book({ ...input, hour:'10:00', email:'fail@example.com' });
+  assert.equal(failedInvitation.status,503);
+  const pending = await failedInvitation.json();
+  assert.equal(pending.reservationNeedsReview,true);
+  assert.equal(pending.onlineUrl,'https://meet.google.com/unique-session');
+  assert.match(pending.error,/No vuelvas a reservar/);
 });
