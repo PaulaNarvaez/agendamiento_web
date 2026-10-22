@@ -103,6 +103,12 @@ Ejecuta `npm.cmd run check:google` para verificar autorización/disponibilidad y
 
 Para una reserva ya creada, abre ese evento en Google Calendar, comprueba el enlace de Meet y el correo del paciente en Invitados, guarda y elige enviar invitaciones si Google lo solicita. Esto permite gestionar ese evento sin duplicarlo. Los eventos anteriores no se reparan automáticamente al actualizar el código.
 
+### Error 403 rateLimitExceeded al enviar una invitación
+
+Este rechazo viene de Google y puede corresponder a límites de solicitudes o de uso del calendario/invitaciones. La aplicación reintenta únicamente rechazos explícitos 403 `rateLimitExceeded`/`userRateLimitExceeded` y 429, con espera exponencial y variación aleatoria, hasta cuatro intentos sobre **el mismo evento**. No crea otro evento ni otro Meet. Respeta `Retry-After` expresado en segundos o como fecha; si Google exige más de diez segundos, deja el envío pendiente en vez de reintentar antes de tiempo.
+
+Si el límite persiste, el mensaje identifica la limitación y conserva la sesión para revisión. No hay una cola en segundo plano ni reenvío posterior garantizado. Espera a que Google permita enviar de nuevo y gestiona la invitación en el evento existente de Calendar. No repitas reservas para probar: eso genera más actividad. La consola de Google Cloud → Calendar API → Cuotas puede ayudar a distinguir límites de API; algunos límites de uso e invitaciones se gestionan aparte y no se eliminan aumentando cuotas. No se puede prometer un plazo de recuperación.
+
 ## Contenido y publicación pendientes
 
 Faltan confirmar formación, trayectoria, precio, duración, horarios y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.

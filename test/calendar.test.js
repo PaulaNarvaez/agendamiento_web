@@ -131,3 +131,36 @@ test('fallo de invitación informa que hay que revisar el evento y conserva su M
     return true;
   });
 });
+test('rateLimitExceeded reintenta con espera creciente sobre el mismo evento sin recrearlo', async () => {
+  let inserts=0, patches=0;
+  const pauses=[], paths=[];
+  const google=async (path,options={})=>{
+    if(options.method==='POST'){inserts++;return {id:'single-event',hangoutLink:'https://meet.google.com/unique-event'};}
+    paths.push(path);patches++;
+    if(patches<3){const error=new Error('Rate limit');error.httpStatus=403;error.googleReason='rateLimitExceeded';throw error;}
+    return {id:'single-event'};
+  };
+  const result=await reserveWithMeet(google,'calendar',{name:'Ana',email:'ana@example.com'},slot,async pause=>pauses.push(pause));
+  assert.equal(inserts,1);assert.equal(patches,3);assert.equal(new Set(paths).size,1);
+  assert.ok(pauses[0]>=1000&&pauses[0]<1250);
+  assert.ok(pauses[1]>=2000&&pauses[1]<2250);
+  assert.equal(result.onlineUrl,'https://meet.google.com/unique-event');
+});
+test('límite persistente agota los intentos y conserva la reserva para revisión', async () => {
+  let inserts=0,patches=0;
+  const google=async(path,options={})=>{
+    if(options.method==='POST'){inserts++;return {id:'single-event',hangoutLink:'https://meet.google.com/unique-event'};}
+    patches++;const error=new Error('Rate limit');error.httpStatus=403;error.googleReason='rateLimitExceeded';throw error;
+  };
+  await assert.rejects(reserveWithMeet(google,'calendar',{name:'Ana',email:'ana@example.com'},slot,async()=>{}),error=>error.reservationNeedsReview&&error.googleReason==='rateLimitExceeded');
+  assert.equal(inserts,1);assert.equal(patches,4);
+});
+test('no reintenta antes de una espera larga exigida por Google', async () => {
+  let patches=0;
+  const google=async(path,options={})=>{
+    if(options.method==='POST')return {id:'single-event',hangoutLink:'https://meet.google.com/unique-event'};
+    patches++;const error=new Error('Rate limit');error.httpStatus=429;error.retryAfterMs=60000;throw error;
+  };
+  await assert.rejects(reserveWithMeet(google,'calendar',{name:'Ana',email:'ana@example.com'},slot,async()=>assert.fail('No debe ignorar Retry-After largo')));
+  assert.equal(patches,1);
+});

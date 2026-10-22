@@ -8,6 +8,11 @@ async function apiError(response, phase) {
   const reason = typeof body.error === 'string' ? body.error : body.error?.errors?.[0]?.reason;
   const error = new Error(phase === 'autorizacion_google' ? 'Google authentication failed' : 'Google calendar request failed');
   error.httpStatus = response.status;
+  const retryAfter = response.headers.get('retry-after');
+  if (retryAfter) {
+    const pause = /^\d+$/.test(retryAfter) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - Date.now();
+    if (Number.isFinite(pause)) error.retryAfterMs = Math.max(0, pause);
+  }
   error.googleReason = safeReasons.has(reason) ? reason : 'unknown';
   if (phase) error.phase = phase;
   return error;
@@ -84,6 +89,25 @@ export function meetingLink(event) {
   });
 }
 
+export function isGoogleRateLimit(error) {
+  return error.httpStatus === 429 || (error.httpStatus === 403 && ['rateLimitExceeded', 'userRateLimitExceeded'].includes(error.googleReason));
+}
+
+// Solo reintenta rechazos explícitos por límite. Un timeout deja el resultado
+// incierto y no debe reenviar invitaciones automáticamente.
+export async function sendInvitationUpdate(google, path, update, wait = delay) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try { return await google(path, { method: 'PATCH', body: JSON.stringify(update) }); }
+    catch (error) {
+      if (!isGoogleRateLimit(error) || attempt === 3) throw error;
+      const pause = error.retryAfterMs ?? (1000 * 2 ** attempt + Math.floor(Math.random() * 250));
+      // No ignorar una espera larga indicada por Google ni mantener la petición abierta indefinidamente.
+      if (!Number.isFinite(pause) || pause > 10000) throw error;
+      await wait(Math.max(0, pause));
+    }
+  }
+}
+
 // Primero se genera un Meet exclusivo. La invitación se solicita solo cuando
 // el enlace está listo; una creación de Meet fallida revierte el evento provisional.
 export async function reserveWithMeet(google, calendarId, input, slot, wait = delay) {
@@ -121,10 +145,7 @@ export async function reserveWithMeet(google, calendarId, input, slot, wait = de
     throw error;
   }
   try {
-    const confirmed = await google(`${path}?conferenceDataVersion=1&sendUpdates=all`, {
-      method: 'PATCH',
-      body: JSON.stringify({ attendees, location: onlineUrl, description: body.description.replace('El acceso de Google Meet se incluirá en esta invitación.', `Acceso a la sesión: ${onlineUrl}`) }),
-    });
+    const confirmed = await sendInvitationUpdate(google, `${path}?conferenceDataVersion=1&sendUpdates=all`, { attendees, location: onlineUrl, description: body.description.replace('El acceso de Google Meet se incluirá en esta invitación.', `Acceso a la sesión: ${onlineUrl}`) }, wait);
     if (!confirmed?.id) throw new Error('Invitation update unconfirmed');
   } catch (error) {
     error.reservationNeedsReview = true;

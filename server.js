@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { findPortrait } from './portrait.js';
 import { fileURLToPath } from 'node:url';
 import { missingSettings, configurationReport } from './configuration.js';
-import { reserveWithMeet, createGoogleClient, googleDiagnostic } from './calendar.js';
+import { reserveWithMeet, createGoogleClient, googleDiagnostic, isGoogleRateLimit } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
 const live = missingSettings().length === 0;
@@ -79,7 +79,14 @@ const server = http.createServer(async (req, res) => {
   } catch (error) {
     if (error.code === 'ENOENT') return json(res, 404, { error: 'No encontrado.' });
     console.error(googleDiagnostic(error));
-    if (error.reservationNeedsReview) return json(res, 503, { reservationNeedsReview: true, onlineUrl: error.onlineUrl, error: 'La sesión se creó en el calendario, pero no pudimos confirmar el envío de la invitación. No vuelvas a reservar: contacta con la profesional para revisar el evento y enviar la invitación.' });
+    if (error.reservationNeedsReview) return json(res, 503, {
+      code: isGoogleRateLimit(error) ? 'INVITATION_RATE_LIMITED' : 'INVITATION_UNCONFIRMED',
+      reservationNeedsReview: true,
+      onlineUrl: error.onlineUrl,
+      error: isGoogleRateLimit(error)
+        ? 'La sesión está registrada, pero Google limitó temporalmente el envío de la invitación. No vuelvas a reservar: contacta con la profesional para gestionar la invitación del evento existente cuando Google permita enviarla.'
+        : 'La sesión se creó en el calendario, pero no pudimos confirmar el envío de la invitación. No vuelvas a reservar: contacta con la profesional para revisar el evento y enviar la invitación.',
+    });
     if (error.code === 'MEET_UNAVAILABLE') return json(res, 503, { error: 'Google no pudo generar la videollamada. El evento provisional se eliminó y la reserva no se confirmó. Intenta nuevamente más tarde.' });
     console.error('No se pudo completar la operación con el servicio de agenda.');
     json(res, 503, { error: 'No pudimos confirmar la operación. Antes de reintentar, revisa tu correo o consulta con la profesional para comprobar si existe una reserva y evitar duplicados.' });
