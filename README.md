@@ -107,7 +107,9 @@ Para una reserva ya creada, abre ese evento en Google Calendar, comprueba el enl
 
 Faltan confirmar formación, trayectoria, precio, duración, horarios y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.
 
-Para incorporar la fotografía autorizada de Camila, agrega `public/camila.jpg`. El retrato se muestra automáticamente; mientras tanto se usan sus iniciales. La foto del chat no está disponible como archivo del repositorio.
+Para incorporar la fotografía autorizada de Camila, agrega `public/camila.jpg`, `camila.jpeg`, `camila.png` o `camila.webp`. Se aceptan mayúsculas en el nombre y la extensión. Si solo hay una imagen JPG/JPEG/PNG/WebP en `public`, se usa aunque tenga otro nombre; si hay varias, usa el nombre `camila` para evitar ambigüedad. No basta con cambiar la extensión de un formato distinto: exporta la foto a uno de los formatos admitidos.
+
+El retrato carga independientemente de Google. Después de copiar la foto, recarga la página; no es necesario volver a autorizar. En tu navegador local abre `http://localhost:3000/api/portrait`: debe mostrar la imagen. Si responde «Fotografía no disponible», revisa que el archivo esté en la carpeta `public` de la misma copia del proyecto que estás ejecutando. La imagen enviada solo como vista previa en el chat no se incorpora automáticamente al repositorio.
 
 En producción usar HTTPS y **una sola instancia**. La cola evita reservas simultáneas dentro de esa instancia, pero no bloquea cambios manuales o aplicaciones externas en Google. Múltiples instancias requieren persistencia e idempotencia compartidas. Ante un timeout al crear un evento, comprobar Calendar antes de repetir para evitar duplicados. El límite por IP vive en memoria y debe complementarse con controles del proveedor. El sitio aún no está desplegado públicamente.
 

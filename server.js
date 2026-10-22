@@ -1,5 +1,6 @@
 import http from 'node:http';
-import { readFile, access } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { findPortrait } from './portrait.js';
 import { fileURLToPath } from 'node:url';
 import { missingSettings, configurationReport } from './configuration.js';
 import { reserveWithMeet, createGoogleClient, googleDiagnostic } from './calendar.js';
@@ -26,14 +27,14 @@ let bookingQueue = Promise.resolve();
 const rates = new Map();
 function json(res, status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
 const root = fileURLToPath(new URL('./public/', import.meta.url));
-const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/camila.jpg': ['camila.jpg','image/jpeg'], '/sculpture.svg': ['sculpture.svg', 'image/svg+xml'] };
+const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/sculpture.svg': ['sculpture.svg', 'image/svg+xml'] };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   try {
     const url = new URL(req.url, 'http://localhost');
-    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: await access(root + 'camila.jpg').then(() => true, () => false), timeZone: zone, today: localDate() });
+    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: Boolean(await findPortrait(root)), timeZone: zone, today: localDate() });
     if (req.method === 'GET' && url.pathname === '/api/availability') {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se pueden realizar reservas en este momento.' });
       const date = url.searchParams.get('date');
@@ -61,6 +62,13 @@ const server = http.createServer(async (req, res) => {
       });
       bookingQueue = action.catch(() => {});
       return await action;
+    }
+    if (req.method === 'GET' && ['/api/portrait', '/camila.jpg'].includes(url.pathname)) {
+      const portrait = await findPortrait(root);
+      if (!portrait) return json(res, 404, { error: 'Fotografía no disponible.' });
+      const data = await readFile(root + portrait.name);
+      res.writeHead(200, { 'Content-Type': portrait.type, 'Cache-Control': 'no-store' });
+      return res.end(data);
     }
     if (req.method === 'GET' && assets[url.pathname]) {
       const [file, type] = assets[url.pathname];

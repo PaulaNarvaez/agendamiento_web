@@ -69,7 +69,17 @@ $('booking-form').addEventListener('submit', async event => {
   } catch (error) { $('form-status').textContent = error.message || 'No se pudo confirmar la reserva. Revisa tu correo antes de reintentar.'; }
   finally { $('submit').disabled = false; }
 });
-const portrait = $('portrait'); portrait.addEventListener('load', () => { portrait.hidden = false; $('portrait-placeholder').hidden = true; });
+const portrait = $('portrait');
+function revealPortrait() {
+  if (!portrait.naturalWidth) return;
+  portrait.hidden = false;
+  $('portrait-placeholder').hidden = true;
+}
+portrait.addEventListener('load', revealPortrait);
+portrait.addEventListener('error', () => { portrait.hidden = true; $('portrait-placeholder').hidden = false; });
+// El retrato no depende de la agenda ni de que Google esté configurado.
+portrait.src = portrait.dataset.src;
+if (portrait.complete) revealPortrait();
 function unavailableAgenda(message) {
   $('mode-notice').textContent = message;
   $('date-step').hidden = true;
@@ -83,7 +93,6 @@ async function loadAgenda() {
   $('retry-agenda').disabled = true;
   try {
     const response = await fetch('/api/config'); if (!response.ok) throw new Error(); config = await response.json();
-    if (config.hasPortrait) portrait.src = portrait.dataset.src;
     if (!config.bookingEnabled) {
       unavailableAgenda('Reservas no disponibles por el momento.');
       return;

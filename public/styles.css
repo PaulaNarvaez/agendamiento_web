@@ -100,3 +100,53 @@
 
 /* Mantiene el rostro visible al usar un retrato vertical. */
 .portrait img { object-position: 50% 25%; }
+
+/* Retrato integrado: luz difusa y bordes suaves, conservando el rostro claro. */
+.portrait {
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 65% 35%, #eadfea 0%, #f2e9f2 46%, var(--cream) 78%);
+}
+.portrait::before {
+  content: '';
+  position: absolute;
+  inset: 6% 8% 12%;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #e6cfdf99, #cbbcdf70);
+  filter: blur(28px);
+  z-index: 0;
+  pointer-events: none;
+}
+.portrait img {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 440px;
+  object-fit: cover;
+  object-position: 50% 25%;
+  mask-image: radial-gradient(ellipse 74% 76% at 50% 39%, #000 43%, #000d 65%, #0005 83%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 74% 76% at 50% 39%, #000 43%, #000d 65%, #0005 83%, transparent 100%);
+}
+.portrait-caption {
+  z-index: 2;
+  bottom: 19px;
+  left: 20px;
+  right: auto;
+  max-width: calc(100% - 40px);
+  padding: 9px 15px;
+  border: 1px solid #ffffffb3;
+  border-radius: 30px;
+  background: #fffc;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #63536e;
+  font-size: 9px;
+  letter-spacing: .3px;
+}
+@media(max-width:700px) {
+  .portrait img { height: 390px; }
+  .portrait { border-radius: 23px; }
+  .portrait-caption { bottom: 16px; left: 16px; max-width: calc(100% - 32px); }
+}
