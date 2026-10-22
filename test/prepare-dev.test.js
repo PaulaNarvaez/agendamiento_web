@@ -11,7 +11,7 @@ test('arranque de desarrollo se detiene indicando qué falta sin imprimir secret
   assert.ok(!result.stderr.includes('fake-private-secret'));
 });
 test('arranque con configuración presente continúa sin volver a solicitar permisos', () => {
-  const env = { ...process.env, ...Object.fromEntries(requiredSettings.map(key => [key, 'fake-test-value'])) };
+  const env = { ...process.env, ...Object.fromEntries(requiredSettings.map(key => [key, 'fake-test-value'])), GOOGLE_ACCOUNT_EMAIL:'pruebacami12@gmail.com', GOOGLE_CALENDAR_ID:'pruebacami12@gmail.com' };
   const result = spawnSync(process.execPath, ['scripts/prepare-dev.js'], { cwd: new URL('../', import.meta.url), env, encoding:'utf8' });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Iniciando la agenda/);

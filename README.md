@@ -52,7 +52,7 @@ npm.cmd run connect:google -- --account=pruebacami12@gmail.com
 npm.cmd run dev
 ```
 
-En el navegador autoriza **pruebacami12@gmail.com**. El parámetro `--account` fuerza la selección esperada aunque tu `.env` conserve la cuenta anterior. Solo después de verificar la nueva cuenta, el asistente actualiza `GOOGLE_ACCOUNT_EMAIL`, `GOOGLE_CALENDAR_ID` y `GOOGLE_REFRESH_TOKEN` en `.env`. Conserva ID, secreto, duración, precio y horarios. No reemplaces tu `.env` por la plantilla.
+En el navegador autoriza **pruebacami12@gmail.com**. La cuenta permitida es exclusivamente `pruebacami12@gmail.com`, incluso si tu `.env` conserva otra. `npm.cmd run dev` inicia una nueva autorización cuando detecta la cuenta o el calendario anteriores. El parámetro `--account` se admite para esa misma dirección y rechaza otras. Solo después de verificar la nueva cuenta, el asistente actualiza `GOOGLE_ACCOUNT_EMAIL`, `GOOGLE_CALENDAR_ID` y `GOOGLE_REFRESH_TOKEN` en `.env`. Conserva ID, secreto, duración, precio y horarios. No reemplaces tu `.env` por la plantilla.
 
 Las nuevas reservas se crean en el calendario principal de la nueva cuenta, que será la organizadora de las invitaciones. Google controla la dirección técnica que entrega sus notificaciones; no es un correo SMTP personalizado. Los eventos existentes de la cuenta anterior no se migran ni se eliminan, y sus bloqueos no se consultan en el calendario nuevo: refleja allí las sesiones vigentes antes de aceptar nuevas reservas.
 
@@ -85,7 +85,7 @@ En modo prueba de Google, los refresh tokens de apps externas pueden caducar a l
 
 El servidor consulta la disponibilidad del calendario configurado y vuelve a comprobarla al reservar. Crea un evento **privado** llamado «Sesión online · Camila Leiva, psicóloga», con fecha, inicio y término en `America/Santiago`, modalidad telemática, instrucciones y enlace de conexión. Añade al paciente como asistente y solicita a Google el envío de la invitación con `sendUpdates=all`.
 
-El evento aparece en el calendario de `pruebacami12@gmail.com` cuando se usa ese ID. Los bloqueos que crees en ese mismo calendario impiden reservas superpuestas. Si usas un calendario secundario, copia su ID a `GOOGLE_CALENDAR_ID`, asegúrate de que tu cuenta tenga permiso de edición y refleja allí todos los bloqueos relevantes.
+El evento aparece en el calendario de `pruebacami12@gmail.com` cuando se usa ese ID. Los bloqueos que crees en ese mismo calendario impiden reservas superpuestas. Esta instalación solo admite el calendario principal de `pruebacami12@gmail.com`. La aplicación comprueba también que el token pertenezca a esa cuenta; una autorización de otra cuenta se rechaza antes de consultar o modificar eventos.
 
 Para recibir avisos en tu propio correo, configura las notificaciones de ese calendario en Google Calendar. Cada paciente controla las notificaciones de su calendario. Los recordatorios configurados en el evento corresponden a la cuenta organizadora; no sustituyen ni garantizan los recordatorios del paciente. Las invitaciones dependen de Google y pueden llegar a spam: no hay un servicio SMTP separado ni seguimiento de entrega.
 

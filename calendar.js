@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { zone } from './scheduling.js';
 
-const safeReasons = new Set(['invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied', 'authError', 'insufficientPermissions', 'forbidden', 'notFound', 'badRequest', 'invalid', 'required', 'rateLimitExceeded', 'userRateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded', 'backendError', 'internalError']);
+const safeReasons = new Set(['accountMismatch', 'invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied', 'authError', 'insufficientPermissions', 'forbidden', 'notFound', 'badRequest', 'invalid', 'required', 'rateLimitExceeded', 'userRateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded', 'backendError', 'internalError']);
 async function apiError(response, phase) {
   const body = await response.json().catch(() => ({}));
   const reason = typeof body.error === 'string' ? body.error : body.error?.errors?.[0]?.reason;
@@ -42,6 +42,17 @@ export function createGoogleClient(config, request = fetch) {
       if (!response.ok) throw await apiError(response, 'autorizacion_google');
       const data = await response.json();
       if (!data.access_token || !Number.isFinite(data.expires_in)) throw new Error('Google authentication incomplete');
+      if (config.accountEmail) {
+        const profile = await request('https://openidconnect.googleapis.com/v1/userinfo', {
+          headers: { Authorization: `Bearer ${data.access_token}` }, signal: AbortSignal.timeout(15000),
+        });
+        if (!profile.ok) throw await apiError(profile, 'autorizacion_google');
+        const account = await profile.json();
+        if (!account.email_verified || account.email?.toLowerCase() !== config.accountEmail.toLowerCase()) {
+          const error = new Error('La autorización pertenece a otra cuenta. Vuelve a conectar la cuenta organizadora.');
+          error.phase = 'autorizacion_google'; error.googleReason = 'accountMismatch'; throw error;
+        }
+      }
       token = data.access_token;
       expires = Date.now() + (data.expires_in - 60) * 1000;
     }

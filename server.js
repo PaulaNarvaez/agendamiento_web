@@ -2,17 +2,17 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { findPortrait } from './portrait.js';
 import { fileURLToPath } from 'node:url';
-import { missingSettings, configurationReport } from './configuration.js';
+import { missingSettings, configurationReport, organizerConfigurationIssue, organizerEmail } from './configuration.js';
 import { reserveWithMeet, createGoogleClient, googleDiagnostic, isGoogleRateLimit } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
-const live = missingSettings().length === 0;
+const live = missingSettings().length === 0 && !organizerConfigurationIssue();
 const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
 const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
 const hours = [...new Set((process.env.AVAILABLE_HOURS || '09:00,10:00,11:00,15:00,16:00,17:00').split(','))].sort();
 if (!Number.isInteger(duration) || duration < 15 || duration > 180 || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6) || hours.some(hour => !/^([01]\d|2[0-3]):[0-5]\d$/.test(hour))) throw new Error('Configuración de horarios no válida');
 if (live && (!Number.isFinite(Number(process.env.SESSION_PRICE_CLP)) || Number(process.env.SESSION_PRICE_CLP) < 0)) throw new Error('Precio no válido');
-const google = createGoogleClient({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN });
+const google = createGoogleClient({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN, accountEmail: organizerEmail });
 async function available(date) {
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   if (!weekdays.includes(day)) return [];

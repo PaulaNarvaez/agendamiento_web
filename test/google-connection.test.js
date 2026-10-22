@@ -22,10 +22,10 @@ test('asistente OAuth: estado, PKCE, cuenta verificada y guardado privado sin pe
       return Response.json({email:process.env.MOCK_ACCOUNT,email_verified:true});
     };
   `);
-  for (const account of ['other@example.com', 'heatherroseyt@gmail.com', 'pruebacami12@gmail.com']) {
+  for (const account of ['other@example.com', 'pruebacami12@gmail.com']) {
     await writeFile(join(directory,'.env'), 'EXISTING_SETTING=keep-me\n');
-    const child = spawn(process.execPath, ['--import',pathToFileURL(mock).href,fileURLToPath(new URL(account==='heatherroseyt@gmail.com' ? '../scripts/prepare-dev.js' : '../scripts/connect-google.js',import.meta.url)), ...(account==='pruebacami12@gmail.com' ? ['--account=pruebacami12@gmail.com'] : [])], {
-      cwd:directory,env:{...process.env,GOOGLE_CLIENT_ID:'fake-client',GOOGLE_CLIENT_SECRET:'fake-secret',GOOGLE_ACCOUNT_EMAIL:'heatherroseyt@gmail.com',GOOGLE_CALENDAR_ID:'heatherroseyt@gmail.com',MOCK_ACCOUNT:account,NO_BROWSER:'1',NODE_OPTIONS:'--import '+pathToFileURL(mock).href,GOOGLE_REFRESH_TOKEN:'',SESSION_DURATION_MINUTES:'50',SESSION_PRICE_CLP:'30000',AVAILABLE_WEEKDAYS:'1,2,3,4,5',AVAILABLE_HOURS:'09:00,10:00'},stdio:['ignore','pipe','pipe'],
+    const child = spawn(process.execPath, ['--import',pathToFileURL(mock).href,fileURLToPath(new URL(account==='pruebacami12@gmail.com' ? '../scripts/prepare-dev.js' : '../scripts/connect-google.js',import.meta.url)), ...(account==='pruebacami12@gmail.com' ? ['--account=pruebacami12@gmail.com'] : [])], {
+      cwd:directory,env:{...process.env,GOOGLE_CLIENT_ID:'fake-client',GOOGLE_CLIENT_SECRET:'fake-secret',GOOGLE_ACCOUNT_EMAIL:'old@example.com',GOOGLE_CALENDAR_ID:'old@example.com',MOCK_ACCOUNT:account,NO_BROWSER:'1',NODE_OPTIONS:'--import '+pathToFileURL(mock).href,GOOGLE_REFRESH_TOKEN:'fake-old-token',SESSION_DURATION_MINUTES:'50',SESSION_PRICE_CLP:'30000',AVAILABLE_WEEKDAYS:'1,2,3,4,5',AVAILABLE_HOURS:'09:00,10:00'},stdio:['ignore','pipe','pipe'],
     });
     t.after(()=>child.kill());
     const exited=once(child,'exit');
@@ -35,7 +35,7 @@ test('asistente OAuth: estado, PKCE, cuenta verificada y guardado privado sin pe
       child.stdout.on('data',()=>{const match=output.match(/https:\/\/accounts.google.com\/\S+/);if(match){clearTimeout(timer);resolve(new URL(match[0]));}});
     });
     assert.equal(authorization.searchParams.get('code_challenge_method'),'S256');
-    assert.equal(authorization.searchParams.get('login_hint'), account==='pruebacami12@gmail.com' ? account : 'heatherroseyt@gmail.com');
+    assert.equal(authorization.searchParams.get('login_hint'), account==='pruebacami12@gmail.com' ? account : 'pruebacami12@gmail.com');
     const callback=new URL(authorization.searchParams.get('redirect_uri'));
     callback.search=new URLSearchParams({state:'invalid',code:'fake'}).toString();
     assert.equal((await fetch(callback)).status,400);

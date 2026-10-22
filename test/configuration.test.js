@@ -15,3 +15,9 @@ test('detecta valores vacíos y reconoce la configuración completa', () => {
   environment.AVAILABLE_HOURS = '   ';
   assert.deepEqual(missingSettings(environment), ['AVAILABLE_HOURS']);
 });
+test('solo permite configurar la cuenta y calendario de pruebacami12', async () => {
+  const { organizerConfigurationIssue, organizerEmail } = await import('../configuration.js');
+  assert.equal(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:organizerEmail,GOOGLE_CALENDAR_ID:organizerEmail}),null);
+  assert.ok(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:'old@example.com',GOOGLE_CALENDAR_ID:'old@example.com'}));
+  assert.ok(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:organizerEmail,GOOGLE_CALENDAR_ID:'old@example.com'}));
+});

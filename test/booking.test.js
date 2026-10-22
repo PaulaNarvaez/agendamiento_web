@@ -15,9 +15,10 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
     let event;
     globalThis.fetch = async (url, options) => {
       if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'fake', expires_in: 3600 });
-      if (url.endsWith('/freeBusy')) return Response.json({ calendars: { 'heatherroseyt@gmail.com': { busy: event ? [{ start: event.start.dateTime, end: event.end.dateTime }] : [] } } });
+      if (url === 'https://openidconnect.googleapis.com/v1/userinfo') return Response.json({ email: 'pruebacami12@gmail.com', email_verified: true });
+      if (url.endsWith('/freeBusy')) return Response.json({ calendars: { 'pruebacami12@gmail.com': { busy: event ? [{ start: event.start.dateTime, end: event.end.dateTime }] : [] } } });
       if (options?.method === 'POST') {
-        assert.equal(url, 'https://www.googleapis.com/calendar/v3/calendars/heatherroseyt%40gmail.com/events?conferenceDataVersion=1&sendUpdates=none');
+        assert.equal(url, 'https://www.googleapis.com/calendar/v3/calendars/pruebacami12%40gmail.com/events?conferenceDataVersion=1&sendUpdates=none');
         event = JSON.parse(options.body);
         assert.match(event.description, /Camila Leiva/);
         assert.equal(event.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
@@ -39,7 +40,7 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
   `);
   const child = spawn(process.execPath, ['--import', pathToFileURL(mock).href, 'server.js'], {
     cwd: new URL('../', import.meta.url),
-    env: { ...process.env, PORT: '0', GOOGLE_CLIENT_ID: 'fake', GOOGLE_CLIENT_SECRET: 'fake', GOOGLE_REFRESH_TOKEN: 'fake', GOOGLE_CALENDAR_ID: 'heatherroseyt@gmail.com', SESSION_DURATION_MINUTES: '50', SESSION_PRICE_CLP: '30000', AVAILABLE_WEEKDAYS: '0,1,2,3,4,5,6', AVAILABLE_HOURS: '09:00,10:00', ONLINE_SESSION_URL: '' },
+    env: { ...process.env, PORT: '0', GOOGLE_CLIENT_ID: 'fake', GOOGLE_CLIENT_SECRET: 'fake', GOOGLE_REFRESH_TOKEN: 'fake', GOOGLE_CALENDAR_ID: 'pruebacami12@gmail.com', GOOGLE_ACCOUNT_EMAIL: 'pruebacami12@gmail.com', SESSION_DURATION_MINUTES: '50', SESSION_PRICE_CLP: '30000', AVAILABLE_WEEKDAYS: '0,1,2,3,4,5,6', AVAILABLE_HOURS: '09:00,10:00', ONLINE_SESSION_URL: '' },
     stdio: ['ignore','pipe','pipe'],
   });
   t.after(() => child.kill());

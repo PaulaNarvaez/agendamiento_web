@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { missingSettings, configurationReport } from '../configuration.js';
+import { missingSettings, configurationReport, organizerConfigurationIssue, organizerEmail } from '../configuration.js';
 
 const missing = missingSettings();
 const missingCredentials = missing.filter(name => ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET'].includes(name));
@@ -9,8 +9,9 @@ if (missingCredentials.length) {
   console.error('No se iniciará una agenda ficticia. Completa tu .env local y vuelve a ejecutar npm.cmd run dev.');
   process.exit(1);
 }
-if (missing.includes('GOOGLE_REFRESH_TOKEN')) {
-  console.log('Falta autorizar Google. Se abrirá el navegador: elige tu cuenta y acepta los permisos.');
+const needsAuthorization = missing.includes('GOOGLE_REFRESH_TOKEN') || Boolean(organizerConfigurationIssue());
+if (needsAuthorization) {
+  console.log(`Autoriza ${organizerEmail}. Se abrirá el navegador: elige esa cuenta y acepta los permisos.`);
   const child = spawn(process.execPath, ['--env-file-if-exists=.env', fileURLToPath(new URL('./connect-google.js', import.meta.url))], { stdio: 'inherit' });
   const exitCode = await new Promise(resolve => {
     child.once('error', () => resolve(1));
@@ -20,8 +21,8 @@ if (missing.includes('GOOGLE_REFRESH_TOKEN')) {
 }
 // El asistente puede completar la cuenta y el token al guardar el archivo.
 const remaining = missing.filter(name => !['GOOGLE_REFRESH_TOKEN','GOOGLE_CALENDAR_ID'].includes(name));
-if (remaining.length || (missing.includes('GOOGLE_CALENDAR_ID') && !missing.includes('GOOGLE_REFRESH_TOKEN'))) {
-  if (missing.includes('GOOGLE_CALENDAR_ID') && !missing.includes('GOOGLE_REFRESH_TOKEN')) remaining.push('GOOGLE_CALENDAR_ID');
+if (remaining.length || (missing.includes('GOOGLE_CALENDAR_ID') && !needsAuthorization)) {
+  if (missing.includes('GOOGLE_CALENDAR_ID') && !needsAuthorization) remaining.push('GOOGLE_CALENDAR_ID');
   console.error('Falta completar en .env:\n' + remaining.map(name => `  - ${name}`).join('\n'));
   console.error('Guarda esos datos reales y ejecuta nuevamente npm.cmd run dev.');
   process.exit(1);

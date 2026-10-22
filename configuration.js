@@ -1,3 +1,5 @@
+export const organizerEmail = 'pruebacami12@gmail.com';
+
 export const requiredSettings = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
@@ -13,11 +15,20 @@ export function missingSettings(environment = process.env) {
   return requiredSettings.filter(name => !environment[name]?.trim());
 }
 
+export function organizerConfigurationIssue(environment = process.env) {
+  return [environment.GOOGLE_ACCOUNT_EMAIL, environment.GOOGLE_CALENDAR_ID].every(value => value?.trim().toLowerCase() === organizerEmail)
+    ? null
+    : `La cuenta y el calendario deben ser ${organizerEmail}. Ejecuta npm.cmd run connect:google para reemplazar la autorización anterior.`;
+}
+
 export function configurationReport(environment = process.env) {
   const missing = missingSettings(environment);
+  const accountIssue = organizerConfigurationIssue(environment);
+  if (!missing.length && accountIssue) return accountIssue;
   if (!missing.length) return 'Configuración completa. Reinicia npm.cmd start y recarga la página. La conexión real con Google se comprueba al consultar la agenda.';
   const lines = ['Las reservas están deshabilitadas porque faltan estos campos en .env:'];
   lines.push(...missing.map(name => `  - ${name}`));
+  if (accountIssue) lines.push(accountIssue);
   if (missing.includes('GOOGLE_REFRESH_TOKEN')) lines.push('Para generar GOOGLE_REFRESH_TOKEN, completa la autorización con npm.cmd run connect:google.');
   lines.push('Completa los campos indicados en tu .env local, guarda y reinicia el servidor.');
   lines.push('No compartas el archivo .env ni sus valores. Este informe solo muestra nombres.');
