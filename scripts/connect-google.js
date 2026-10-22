@@ -6,7 +6,12 @@ import { resolve } from 'node:path';
 
 const clientId = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const email = process.env.GOOGLE_ACCOUNT_EMAIL || 'heatherroseyt@gmail.com';
+const requestedAccount = process.argv.find(argument => argument.startsWith('--account='))?.slice('--account='.length).trim();
+if (requestedAccount !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestedAccount)) {
+  console.error('Indica una cuenta válida usando --account=correo@gmail.com.');
+  process.exit(1);
+}
+const email = requestedAccount || process.env.GOOGLE_ACCOUNT_EMAIL || 'pruebacami12@gmail.com';
 if (!clientId || !clientSecret) {
   console.error('Faltan GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en .env. Sigue los pasos de README.md y ejecuta de nuevo npm run connect:google.');
   process.exit(1);
@@ -46,7 +51,7 @@ const server = http.createServer(async (req, res) => {
     const existing = await lstat(target).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
     if (existing && !existing.isFile()) throw new Error('.env debe ser un archivo regular, no un enlace.');
     let content = existing ? await readFile(target, 'utf8') : '';
-    for (const [name, value] of Object.entries({ GOOGLE_REFRESH_TOKEN: tokens.refresh_token, GOOGLE_CALENDAR_ID: process.env.GOOGLE_CALENDAR_ID || email, GOOGLE_ACCOUNT_EMAIL: email })) {
+    for (const [name, value] of Object.entries({ GOOGLE_REFRESH_TOKEN: tokens.refresh_token, GOOGLE_CALENDAR_ID: requestedAccount ? email : process.env.GOOGLE_CALENDAR_ID || email, GOOGLE_ACCOUNT_EMAIL: email })) {
       const line = `${name}=${JSON.stringify(value)}`;
       const pattern = new RegExp(`^(?:export\\s+)?${name}\\s*=.*$`, 'm');
       content = pattern.test(content) ? content.replace(pattern, () => line) : `${content.trimEnd()}\n${line}\n`;

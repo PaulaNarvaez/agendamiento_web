@@ -97,3 +97,6 @@
   .object-body, .hero-center h1 { animation: none; }
   .float-object { will-change: auto; transition: none; }
 }
+
+/* Mantiene el rostro visible al usar un retrato vertical. */
+.portrait img { object-position: 50% 25%; }
