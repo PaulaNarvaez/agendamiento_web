@@ -33,14 +33,15 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   try {
     const url = new URL(req.url, 'http://localhost');
-    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { demo: !live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: await access(root + 'camila.jpg').then(() => true, () => false), timeZone: zone, today: localDate() });
+    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: await access(root + 'camila.jpg').then(() => true, () => false), timeZone: zone, today: localDate() });
     if (req.method === 'GET' && url.pathname === '/api/availability') {
+      if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se pueden realizar reservas en este momento.' });
       const date = url.searchParams.get('date');
       if (!validDate(date) || date < localDate() || Date.parse(date) > Date.now() + 90 * 86400000) return json(res, 400, { error: 'Elige una fecha entre hoy y los próximos 90 días.' });
-      return json(res, 200, { slots: await available(date), demo: !live });
+      return json(res, 200, { slots: await available(date) });
     }
     if (req.method === 'POST' && url.pathname === '/api/bookings') {
-      if (!live) return json(res, 409, { error: 'Esta agenda es una demostración. No se ha realizado una reserva ni enviado un correo.' });
+      if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se ha realizado ninguna reserva.' });
       if (req.headers['sec-fetch-site'] === 'cross-site' || (req.headers.origin && req.headers.origin !== `https://${req.headers.host}` && req.headers.origin !== `http://${req.headers.host}`)) return json(res, 403, { error: 'Solicitud no permitida.' });
       const address = req.socket.remoteAddress;
       const rate = rates.get(address);
@@ -81,7 +82,7 @@ server.on('error', error => {
 server.listen(Number(process.env.PORT || 3000), '0.0.0.0', () => {
   console.log(`\nCamila Leiva | Psicología online\n`);
   console.log(`  Local: http://localhost:${server.address().port}`);
-  console.log(`  Estado: ${live ? 'Google Calendar configurado' : 'Demostración (sin reservas reales)'}`);
+  console.log(`  Estado: ${live ? 'Google Calendar configurado' : 'Reservas deshabilitadas: falta completar la configuración'}`);
   if (!live) console.log(`\n${configurationReport()}`);
   console.log('\nAbre la URL en tu navegador. Para detener: Ctrl+C.\n');
 });

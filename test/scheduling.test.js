@@ -17,17 +17,17 @@ test('valida fechas, consentimiento, correo y modalidad', () => {
   assert.equal(validateBooking(input), true);
   for (const change of [{ consent: false }, { email: 'inválido' }, { mode: 'otro' }, { mode: 'presencial' }, { name: '' }]) assert.equal(validateBooking({ ...input, ...change }), false);
 });
-test('servidor: página, agenda, rechazo de reserva demo y rutas protegidas', async t => {
+test('servidor sin configurar: no ofrece horarios ni permite reservas ficticias', async t => {
   const child = spawn(process.execPath, ['server.js'], { cwd: new URL('../', import.meta.url), env: { ...process.env, PORT: '3198', GOOGLE_CLIENT_ID: '' }, stdio: ['ignore','pipe','pipe'] });
   t.after(() => child.kill());
   await once(child.stdout, 'data');
   const base = 'http://127.0.0.1:3198';
   const page = await fetch(base); assert.equal(page.status, 200); assert.match(await page.text(), /Camila Leiva/);
-  const config = await (await fetch(base+'/api/config')).json(); assert.equal(config.demo, true); assert.equal(config.modality, 'online');
+  const config = await (await fetch(base+'/api/config')).json(); assert.equal(config.bookingEnabled, false); assert.equal(config.modality, 'online');
   const date = new Date(`${config.today}T12:00:00Z`); date.setUTCDate(date.getUTCDate()+1); while ([0,6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate()+1);
   const response = await fetch(base+'/api/availability?date='+date.toISOString().slice(0,10));
-  const agenda = await response.json(); assert.equal(response.status,200); assert.ok(agenda.slots.length>0);
-  assert.equal((await fetch(base+'/api/availability?date=2026-02-30')).status,400);
-  assert.equal((await fetch(base+'/api/bookings', { method:'POST', body:'{}' })).status,409);
+  const agenda = await response.json(); assert.equal(response.status,503); assert.equal(agenda.code,'AGENDA_UNAVAILABLE'); assert.equal(agenda.slots,undefined);
+  assert.equal((await fetch(base+'/api/availability?date=2026-02-30')).status,503);
+  assert.equal((await fetch(base+'/api/bookings', { method:'POST', body:'{}' })).status,503);
   assert.equal((await fetch(base+'/.git/config')).status,404);
 });

@@ -49,7 +49,7 @@ test('reserva online: Calendar simulado, invitación y horario bloqueado', async
   });
   const base = `http://127.0.0.1:${port}`;
   const config = await (await fetch(base+'/api/config')).json();
-  assert.equal(config.demo, false);
+  assert.equal(config.bookingEnabled, true);
   const date = new Date(config.today+'T12:00:00Z'); date.setUTCDate(date.getUTCDate()+1);
   const input = { date: date.toISOString().slice(0,10), hour: '09:00', name: 'Paciente', email: 'patient@example.com', consent: true, mode: 'online' };
   const book = (data, headers = {}) => fetch(base+'/api/bookings', { method:'POST', headers:{'Content-Type':'application/json', ...headers}, body:JSON.stringify(data) });

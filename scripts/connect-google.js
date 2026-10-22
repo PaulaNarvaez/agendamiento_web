@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { openBrowser } from './browser.js';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { readFile, lstat, writeFile, rename, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -69,5 +70,6 @@ server.on('error', () => { clearTimeout(timeout); console.error('No se pudo abri
 server.listen(53682, '127.0.0.1', () => {
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirect, response_type: 'code', scope: 'openid email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.freebusy', access_type: 'offline', prompt: 'consent', state, code_challenge: challenge, code_challenge_method: 'S256', login_hint: email }).toString();
+  openBrowser(url.toString());
   console.log(`Abre este enlace en el navegador de este mismo equipo y autoriza ${email}:\n\n${url}\n\nNo compartas la URL final de retorno ni el archivo .env.`);
 });

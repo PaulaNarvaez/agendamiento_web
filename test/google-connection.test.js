@@ -24,8 +24,8 @@ test('asistente OAuth: estado, PKCE, cuenta verificada y guardado privado sin pe
   `);
   for (const account of ['other@example.com', 'heatherroseyt@gmail.com']) {
     await writeFile(join(directory,'.env'), 'EXISTING_SETTING=keep-me\n');
-    const child = spawn(process.execPath, ['--import',pathToFileURL(mock).href,fileURLToPath(new URL('../scripts/connect-google.js',import.meta.url))], {
-      cwd:directory,env:{...process.env,GOOGLE_CLIENT_ID:'fake-client',GOOGLE_CLIENT_SECRET:'fake-secret',GOOGLE_ACCOUNT_EMAIL:'heatherroseyt@gmail.com',GOOGLE_CALENDAR_ID:'heatherroseyt@gmail.com',MOCK_ACCOUNT:account},stdio:['ignore','pipe','pipe'],
+    const child = spawn(process.execPath, ['--import',pathToFileURL(mock).href,fileURLToPath(new URL(account==='heatherroseyt@gmail.com' ? '../scripts/prepare-dev.js' : '../scripts/connect-google.js',import.meta.url))], {
+      cwd:directory,env:{...process.env,GOOGLE_CLIENT_ID:'fake-client',GOOGLE_CLIENT_SECRET:'fake-secret',GOOGLE_ACCOUNT_EMAIL:'heatherroseyt@gmail.com',GOOGLE_CALENDAR_ID:'heatherroseyt@gmail.com',MOCK_ACCOUNT:account,NO_BROWSER:'1',NODE_OPTIONS:'--import '+pathToFileURL(mock).href,GOOGLE_REFRESH_TOKEN:'',SESSION_DURATION_MINUTES:'50',SESSION_PRICE_CLP:'30000',AVAILABLE_WEEKDAYS:'1,2,3,4,5',AVAILABLE_HOURS:'09:00,10:00'},stdio:['ignore','pipe','pipe'],
     });
     t.after(()=>child.kill());
     const exited=once(child,'exit');

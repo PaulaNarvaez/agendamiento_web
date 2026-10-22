@@ -16,7 +16,7 @@ export function missingSettings(environment = process.env) {
 export function configurationReport(environment = process.env) {
   const missing = missingSettings(environment);
   if (!missing.length) return 'Configuración completa. Reinicia npm.cmd start y recarga la página. La conexión real con Google se comprueba al consultar la agenda.';
-  const lines = ['La agenda sigue en demostración porque faltan estos campos en .env:'];
+  const lines = ['Las reservas están deshabilitadas porque faltan estos campos en .env:'];
   lines.push(...missing.map(name => `  - ${name}`));
   if (missing.includes('GOOGLE_REFRESH_TOKEN')) lines.push('Para generar GOOGLE_REFRESH_TOKEN, completa la autorización con npm.cmd run connect:google.');
   lines.push('Completa los campos indicados en tu .env local, guarda y reinicia el servidor.');

@@ -32,6 +32,7 @@ async function selectDate(date) {
     const response = await fetch(`/api/availability?date=${date}`); const data = await response.json();
     if (version !== requestVersion) return;
     if (!response.ok) throw new Error(data.error);
+    $('mode-notice').textContent = 'Agenda habilitada para reservas';
     $('slots').replaceChildren();
     if (!data.slots.length) return slotMessage('No hay horarios disponibles para este día. Selecciona otra fecha.');
     for (const slot of data.slots) {
@@ -42,19 +43,20 @@ async function selectDate(date) {
         $('continue').disabled = false;
       }); $('slots').append(button);
     }
-  } catch (error) { if (version === requestVersion) slotMessage(error.message || 'No se pudo cargar la agenda. Intenta nuevamente.'); }
+  } catch (error) { if (version === requestVersion) { $('mode-notice').textContent = 'No se pudo consultar Google Calendar. No se ha confirmado ninguna reserva.'; slotMessage(error.message || 'No se pudo cargar la agenda. Intenta nuevamente.'); } }
 }
 for (const [id, delta] of [['prev-month',-1],['next-month',1]]) $(id).addEventListener('click', () => { displayed.setUTCMonth(displayed.getUTCMonth()+delta); renderCalendar(); });
 $('continue').addEventListener('click', () => {
   $('selection-summary').textContent = `${formatDate(selectedDate)} · ${selectedHour} · Hora de Chile`;
-  $('form-status').textContent = config.demo ? 'Puedes explorar el formulario. Esta demostración no envía ni guarda tus datos.' : '';
-  $('submit').textContent = config.demo ? 'Probar reserva de demostración' : 'Confirmar reserva ↗'; showStep('data'); $('name').focus();
+  if (!config?.bookingEnabled) return;
+  $('form-status').textContent = '';
+  $('submit').textContent = 'Confirmar reserva ↗'; showStep('data'); $('name').focus();
 });
 $('back').addEventListener('click', () => showStep('date'));
 $('new-booking').addEventListener('click', () => { $('booking-form').reset(); showStep('date'); selectDate(selectedDate); });
 $('booking-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if (config.demo) { $('form-status').textContent = '¡Así se verá el proceso! No se ha realizado una reserva ni enviado un correo. Tus datos no se han guardado.'; return; }
+  if (!config?.bookingEnabled) { $('form-status').textContent = 'La agenda no está habilitada. No se ha realizado ninguna reserva.'; return; }
   $('submit').disabled = true; $('form-status').textContent = 'Confirmando tu reserva…';
   try {
     const response = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('name').value.trim(), email: $('email').value.trim(), date: selectedDate, hour: selectedHour, mode: 'online', consent: $('consent').checked }) });
@@ -66,13 +68,38 @@ $('booking-form').addEventListener('submit', async event => {
   finally { $('submit').disabled = false; }
 });
 const portrait = $('portrait'); portrait.addEventListener('load', () => { portrait.hidden = false; $('portrait-placeholder').hidden = true; });
-try {
-  const response = await fetch('/api/config'); if (!response.ok) throw new Error(); config = await response.json();
-  if (config.hasPortrait) portrait.src = portrait.dataset.src;
-  displayed = new Date(`${config.today.slice(0,7)}-01T12:00:00Z`);
-  if (!config.demo) { $('mode-notice').textContent = 'Agenda conectada con Google Calendar'; $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Por videollamada`; $('faq-price').textContent = $('session-details').textContent; }
-  renderCalendar(); await selectDate(config.today);
-} catch { $('month-label').textContent = 'Agenda no disponible'; slotMessage('No se pudo conectar con la agenda. Recarga la página para reintentar.'); $('prev-month').disabled = true; $('next-month').disabled = true; }
+function unavailableAgenda(message) {
+  $('mode-notice').textContent = message;
+  $('date-step').hidden = true;
+  $('booking-form').hidden = true;
+  $('success').hidden = true;
+  document.querySelector('.booking-tabs').hidden = true;
+  $('booking-unavailable').hidden = false;
+  $('continue').disabled = true;
+}
+async function loadAgenda() {
+  $('retry-agenda').disabled = true;
+  try {
+    const response = await fetch('/api/config'); if (!response.ok) throw new Error(); config = await response.json();
+    if (config.hasPortrait) portrait.src = portrait.dataset.src;
+    if (!config.bookingEnabled) {
+      unavailableAgenda('Reservas no disponibles por el momento.');
+      return;
+    }
+    $('booking-unavailable').hidden = true;
+    document.querySelector('.booking-tabs').hidden = false;
+    showStep('date');
+    displayed = new Date(`${config.today.slice(0,7)}-01T12:00:00Z`);
+    $('mode-notice').textContent = 'Consultando disponibilidad en Google Calendar…';
+    $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Por videollamada`;
+    $('faq-price').textContent = $('session-details').textContent;
+    renderCalendar(); await selectDate(config.today);
+  } catch {
+    unavailableAgenda('No pudimos conectar con la agenda. Intenta nuevamente.');
+  } finally { $('retry-agenda').disabled = false; }
+}
+$('retry-agenda').addEventListener('click', loadAgenda);
+loadAgenda();
 
 // La animación CSS funciona sin JavaScript. La interacción solo se activa
 // con un puntero preciso y cuando no se ha solicitado movimiento reducido.

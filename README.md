@@ -24,7 +24,7 @@ code .
 npm start
 ```
 
-`npm run dev` reinicia el servidor al editar. `.env` se carga automáticamente al iniciar; al cambiar sus valores reinicia el servidor. Si el puerto está ocupado, define otro `PORT` en `.env`, por ejemplo `PORT=3001`. El terminal imprimirá el puerto utilizado.
+`npm run dev` abre la autorización de Google si falta el token (con el ID y el secreto ya configurados), espera a que termine y luego inicia el servidor con recarga al editar. Si faltan credenciales o datos de atención, se detiene indicando los nombres de las variables pendientes. La apertura automática requiere un navegador local; si falla, abre el enlace impreso en ese mismo computador. `.env` se carga automáticamente al iniciar; al cambiar sus valores reinicia el servidor. Si el puerto está ocupado, define otro `PORT` en `.env`, por ejemplo `PORT=3001`. El terminal imprimirá el puerto utilizado.
 
 ## Actualizar desde la versión con enlace fijo
 
@@ -32,15 +32,15 @@ Ejecuta `git pull origin main`, conserva tu `.env` y reinicia con `npm.cmd start
 
 ## Estado de las reservas
 
-Sin la configuración completa, la agenda es una **demostración**: horarios de ejemplo, sin guardar datos de pacientes, crear eventos ni enviar invitaciones. El sitio identifica este estado. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.
+Sin la configuración completa, la agenda muestra **«Agenda no disponible»** y bloquea la selección de horarios y el formulario. No ofrece horas de ejemplo ni un botón de reserva ficticia. Las API de disponibilidad y reserva responden con 503 hasta completar la configuración. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.
 
 Cuenta propuesta: **heatherroseyt@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. Todavía no se ha autorizado esta cuenta ni verificado el envío real de invitaciones.
 
-## Si sigue apareciendo «Agenda de demostración»
+## Si la agenda no está habilitada
 
 En la terminal de VS Code, dentro de la carpeta del proyecto, ejecuta `npm.cmd run check:config` (Windows) o `npm run check:config` (otros sistemas). El informe muestra la ruta del `.env` esperado y únicamente los nombres de las variables vacías, nunca sus valores. Completa esos campos en tu computador, guarda el archivo, detén el servidor con Ctrl+C y vuelve a ejecutar `npm.cmd start`. No sobrescribas tu `.env` con la plantilla: perderías tu autorización de Google.
 
-La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días u horas. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar en modo demo, el servidor también imprime automáticamente los campos que faltan.
+La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días u horas. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar sin la configuración completa, el servidor también imprime automáticamente los campos que faltan. Si ves «Probar reserva de demostración», estás ejecutando una versión anterior: actualiza el código, reinicia el proceso y recarga el navegador.
 
 ## Conectar tu cuenta de Google (en tu propio computador)
 
@@ -63,7 +63,7 @@ La autorización de Google y la configuración de la sesión son requisitos sepa
    | `AVAILABLE_WEEKDAYS` | Días separados por coma: 0 domingo, 1 lunes … 6 sábado |
    | `AVAILABLE_HOURS` | Horas de inicio `HH:MM`, separadas por coma, horario de Chile |
 
-7. Reinicia `npm start`. La página debe mostrar que la agenda está conectada. Comprueba con datos propios una reserva: evento en tu calendario, invitación recibida por el paciente, fecha/hora/profesional/enlace correctos y bloqueo del mismo horario. Esta prueba requiere autorización real y aún está pendiente.
+7. Reinicia `npm start`. La página debe mostrar que la agenda está habilitada. Comprueba con datos propios una reserva: evento en tu calendario, invitación recibida por el paciente, fecha/hora/profesional/enlace correctos y bloqueo del mismo horario. Esta prueba requiere autorización real y aún está pendiente.
 
 En modo prueba de Google, los refresh tokens de apps externas pueden caducar a los siete días. Antes de abrir reservas públicas, completa los requisitos de publicación/verificación de Google. No uses una autorización temporal como conexión permanente.
 
@@ -93,4 +93,4 @@ En producción usar HTTPS y **una sola instancia**. La cola evita reservas simul
 npm test
 ```
 
-Incluyen horarios de Chile, cruces de eventos, validación exclusivamente online, API de demostración y solicitudes de Google con respuestas simuladas. Las pruebas simuladas nunca envían invitaciones ni sustituyen la validación con una cuenta real.
+Incluyen horarios de Chile, cruces de eventos, validación exclusivamente online, bloqueo de reservas sin configuración y solicitudes de Google con respuestas simuladas. Las pruebas simuladas nunca envían invitaciones ni sustituyen la validación con una cuenta real.
