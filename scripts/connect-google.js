@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { oauthExchangeFailure } from './oauth-errors.js';
 import { organizerEmail } from '../configuration.js';
 import { openBrowser } from './browser.js';
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto';
@@ -40,7 +41,7 @@ const server = http.createServer(async (req, res) => {
       body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, code: url.searchParams.get('code'), code_verifier: verifier, redirect_uri: redirect, grant_type: 'authorization_code' }),
       signal: AbortSignal.timeout(15000),
     });
-    if (!response.ok) throw new Error('Google no autorizó el intercambio. Revisa el cliente OAuth en Google Cloud.');
+    if (!response.ok) throw await oauthExchangeFailure(response);
     const tokens = await response.json();
     if (!tokens.refresh_token || !tokens.access_token) throw new Error('No se obtuvo acceso permanente. Vuelve a autorizar con consentimiento.');
     const granted = new Set((tokens.scope || '').split(' '));
@@ -66,8 +67,9 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(400);
     // Los errores propios son mensajes fijos; nunca se imprimen respuestas OAuth ni tokens.
     const safe = error instanceof TypeError || error.name === 'TimeoutError' ? 'No se pudo conectar con Google. Revisa tu conexión y vuelve a intentar.' : error.message;
-    res.end(safe);
+    res.end(error.oauthDiagnostic ? `${safe}\n${error.oauthDiagnostic}` : safe);
     console.error(safe);
+    if (error.oauthDiagnostic) console.error(error.oauthDiagnostic);
     process.exitCode = 1;
   } finally { clearTimeout(timeout); server.close(); }
 });

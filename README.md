@@ -109,6 +109,10 @@ Este rechazo viene de Google y puede corresponder a límites de solicitudes o de
 
 Si el límite persiste, el mensaje identifica la limitación y conserva la sesión para revisión. No hay una cola en segundo plano ni reenvío posterior garantizado. Espera a que Google permita enviar de nuevo y gestiona la invitación en el evento existente de Calendar. No repitas reservas para probar: eso genera más actividad. La consola de Google Cloud → Calendar API → Cuotas puede ayudar a distinguir límites de API; algunos límites de uso e invitaciones se gestionan aparte y no se eliminan aumentando cuotas. No se puede prometer un plazo de recuperación.
 
+## Error al intercambiar la autorización de Google
+
+El asistente muestra un mensaje específico y una línea `[OAuth] HTTP=...; motivo=...`, sin imprimir el secreto, código, token ni la descripción completa de Google. `invalid_client` requiere revisar el ID y el secreto del mismo cliente OAuth en `.env`, especialmente después de rotar el secreto. `invalid_grant` requiere reiniciar el asistente y autorizar desde el enlace nuevo, comprobando la URI de retorno. No copies credenciales a la plantilla pública ni compartas el `.env` para diagnosticar.
+
 ## Contenido y publicación pendientes
 
 Faltan confirmar formación, trayectoria, precio, duración, horarios y condiciones de cambios/cancelación. Publicar aviso de privacidad y condiciones antes de abrir reservas. Se recogen nombre, correo y consentimiento; no se solicitan antecedentes clínicos ni se procesan pagos. Las reservas reales se guardan en Google Calendar y no hay un registro de auditoría separado del consentimiento.
