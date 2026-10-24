@@ -36,6 +36,12 @@ Sin la configuración completa, la agenda muestra **«Agenda no disponible»** y
 
 Cuenta organizadora prevista: **pruebacami12@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. Todavía no se ha autorizado esta cuenta ni verificado el envío real de invitaciones.
 
+## Completar duración, precio, días y horas sin editar archivos
+
+Ejecuta `npm.cmd run setup:sessions` en Windows (o `npm run setup:sessions`). El asistente pregunta los cuatro datos reales de atención y los guarda en tu `.env` local, conservando las credenciales de Google. Los valores de ejemplo de las preguntas no se guardan automáticamente. Si ya existe un valor, Enter permite conservarlo. Las horas se interpretan en Chile y no pueden superponerse según la duración indicada. Al terminar, inicia con `npm.cmd run dev`.
+
+`git pull` actualiza el código y la plantilla pública; no completa tu `.env` privado.
+
 ## Si la agenda no está habilitada
 
 En la terminal de VS Code, dentro de la carpeta del proyecto, ejecuta `npm.cmd run check:config` (Windows) o `npm run check:config` (otros sistemas). El informe muestra la ruta del `.env` esperado y únicamente los nombres de las variables vacías, nunca sus valores. Completa esos campos en tu computador, guarda el archivo, detén el servidor con Ctrl+C y vuelve a ejecutar `npm.cmd start`. No sobrescribas tu `.env` con la plantilla: perderías tu autorización de Google.

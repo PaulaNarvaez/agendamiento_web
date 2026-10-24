@@ -24,7 +24,7 @@ const remaining = missing.filter(name => !['GOOGLE_REFRESH_TOKEN','GOOGLE_CALEND
 if (remaining.length || (missing.includes('GOOGLE_CALENDAR_ID') && !needsAuthorization)) {
   if (missing.includes('GOOGLE_CALENDAR_ID') && !needsAuthorization) remaining.push('GOOGLE_CALENDAR_ID');
   console.error('Falta completar en .env:\n' + remaining.map(name => `  - ${name}`).join('\n'));
-  console.error('Guarda esos datos reales y ejecuta nuevamente npm.cmd run dev.');
+  console.error('Ejecuta npm.cmd run setup:sessions para completar los datos de atención sin editar archivos. Después ejecuta npm.cmd run dev.');
   process.exit(1);
 }
 console.log('Configuración presente. Iniciando la agenda; la disponibilidad se consultará en Google Calendar.');

@@ -13,6 +13,7 @@
     "connect:google": "node --env-file-if-exists=.env scripts/connect-google.js",
     "check:config": "node --env-file-if-exists=.env scripts/check-config.js",
     "predev": "node --env-file-if-exists=.env scripts/prepare-dev.js",
-    "check:google": "node --env-file-if-exists=.env scripts/check-google.js"
+    "check:google": "node --env-file-if-exists=.env scripts/check-google.js",
+    "setup:sessions": "node scripts/setup-sessions.js"
   }
 }
