@@ -16,6 +16,17 @@ npm.cmd run dev
 
 No hay un `.env` de pruebas con credenciales reales. `.env.example` es solo una plantilla; `npm test` usa respuestas simuladas de Google sin conectar con una cuenta ni enviar invitaciones. El `.env` privado no se descarga con Git. Para sustituir credenciales ya guardadas, usa `npm.cmd run setup:env -- --replace-google`.
 
+## Importar el JSON completo de Google sin copiar campos
+
+```sh
+npm.cmd run setup:google
+npm.cmd run dev
+```
+
+Pega el JSON de tu cliente de Google en una sola línea en la pregunta de entrada oculta. El asistente extrae ID y secreto, valida la URI de retorno del cliente web y actualiza solo tu `.env` privado; no guarda el JSON en Git ni imprime sus valores. Después pregunta los datos de atención. Si solo quieres importar las credenciales conservando los datos de sesiones, ejecuta `npm.cmd run setup:env -- --json`.
+
+Usa credenciales activas del mismo cliente. Si compartiste el secreto en un chat o repositorio, reemplázalo en Google Cloud y utiliza el nuevo únicamente en tu computador.
+
 ## Abrir en Visual Studio Code
 
 Si ya clonaste el repositorio, abre una terminal en su carpeta y ejecuta:

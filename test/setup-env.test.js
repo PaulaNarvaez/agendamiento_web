@@ -53,3 +53,12 @@ test('permite reemplazar el secreto sin mostrarlo y solicita nueva autorización
   assert.equal(env.GOOGLE_CLIENT_SECRET,'fake-new-secret');assert.equal(env.GOOGLE_REFRESH_TOKEN,'');
   assert.ok(!result.stdout.includes('fake-new-secret'));assert.ok(!result.stdout.includes('fake-old-secret'));
 });
+test('importa el JSON en el archivo privado sin imprimirlo y conserva los horarios',async t=>{
+  const path=await directory(t);
+  await writeFile(join(path,'.env'),'AVAILABLE_HOURS=09:00\n');
+  const json=JSON.stringify({web:{client_id:clientId,client_secret:'fake-json-secret',redirect_uris:['http://127.0.0.1:53682/callback']}});
+  const result=run(path,json+'\n',['--json']);assert.equal(result.status,0,result.stderr);
+  const env=parseEnv(await readFile(join(path,'.env'),'utf8'));
+  assert.equal(env.GOOGLE_CLIENT_ID,clientId);assert.equal(env.GOOGLE_CLIENT_SECRET,'fake-json-secret');assert.equal(env.AVAILABLE_HOURS,'09:00');
+  assert.ok(!result.stdout.includes('fake-json-secret'));assert.ok(!result.stderr.includes('fake-json-secret'));
+});

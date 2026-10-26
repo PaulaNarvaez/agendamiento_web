@@ -5,6 +5,7 @@ import { readFile, writeFile, lstat, rename, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseEnv } from 'node:util';
+import { parseGoogleCredentials } from './google-json.js';
 import { organizerEmail } from '../configuration.js';
 
 const target = resolve('.env');
@@ -43,16 +44,21 @@ try {
   console.log(`Cuenta de Google Calendar: ${organizerEmail}. Los valores privados no se mostrarán.`);
   const replace = process.argv.includes('--replace-google');
   let clientId = current.GOOGLE_CLIENT_ID?.trim();
-  while (!validId(clientId)) clientId = await question('Pega tu ID de cliente OAuth completo de Google Cloud: ');
-  if (replace && validId(current.GOOGLE_CLIENT_ID)) {
-    const entered = await question('ID de cliente (Enter para conservar el actual): ');
-    if (entered) clientId = entered;
-    while (!validId(clientId)) clientId = await question('ID no válido. Pega el ID completo que termina en .apps.googleusercontent.com: ');
-  }
   let clientSecret = current.GOOGLE_CLIENT_SECRET?.trim();
-  if (!validSecret(clientSecret) || replace) {
-    clientSecret = await question(`Pega el secreto completo del mismo cliente${replace && validSecret(current.GOOGLE_CLIENT_SECRET) ? ' (Enter para conservarlo)' : ''} (entrada oculta): `, true) || (replace ? current.GOOGLE_CLIENT_SECRET : '');
-    while (!validSecret(clientSecret)) clientSecret = await question('Secreto vacío o formato incorrecto. Pega el valor completo (entrada oculta): ', true);
+  if (process.argv.includes('--json')) {
+    const text = await question('Pega el JSON completo de Google en una sola línea (entrada oculta): ', true);
+    ({ clientId, clientSecret } = parseGoogleCredentials(text));
+  } else {
+    while (!validId(clientId)) clientId = await question('Pega tu ID de cliente OAuth completo de Google Cloud: ');
+    if (replace && validId(current.GOOGLE_CLIENT_ID)) {
+      const entered = await question('ID de cliente (Enter para conservar el actual): ');
+      if (entered) clientId = entered;
+      while (!validId(clientId)) clientId = await question('ID no válido. Pega el ID completo que termina en .apps.googleusercontent.com: ');
+    }
+    if (!validSecret(clientSecret) || replace) {
+      clientSecret = await question(`Pega el secreto completo del mismo cliente${replace && validSecret(current.GOOGLE_CLIENT_SECRET) ? ' (Enter para conservarlo)' : ''} (entrada oculta): `, true) || (replace ? current.GOOGLE_CLIENT_SECRET : '');
+      while (!validSecret(clientSecret)) clientSecret = await question('Secreto vacío o formato incorrecto. Pega el valor completo (entrada oculta): ', true);
+    }
   }
   // Releer justo antes de guardar para conservar otros cambios locales.
   let contents = await readPrivateFile();

@@ -16,6 +16,7 @@
     "check:google": "node --env-file-if-exists=.env scripts/check-google.js",
     "setup:sessions": "node scripts/setup-sessions.js",
     "setup:env": "node scripts/setup-env.js",
-    "setup": "node scripts/setup-env.js && node scripts/setup-sessions.js"
+    "setup": "node scripts/setup-env.js && node scripts/setup-sessions.js",
+    "setup:google": "node scripts/setup-env.js --json && node scripts/setup-sessions.js"
   }
 }
