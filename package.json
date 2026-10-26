@@ -14,6 +14,8 @@
     "check:config": "node --env-file-if-exists=.env scripts/check-config.js",
     "predev": "node --env-file-if-exists=.env scripts/prepare-dev.js",
     "check:google": "node --env-file-if-exists=.env scripts/check-google.js",
-    "setup:sessions": "node scripts/setup-sessions.js"
+    "setup:sessions": "node scripts/setup-sessions.js",
+    "setup:env": "node scripts/setup-env.js",
+    "setup": "node scripts/setup-env.js && node scripts/setup-sessions.js"
   }
 }

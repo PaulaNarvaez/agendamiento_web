@@ -4,6 +4,18 @@ Sitio de atención psicológica exclusivamente telemática, con agenda y reserva
 
 La portada presenta el texto centrado y seis objetos abstractos animados. En escritorio responden suavemente al cursor. El control «Pausar movimiento» detiene la animación; se respeta la preferencia de movimiento reducido del sistema y se pausan los objetos fuera de pantalla.
 
+## Primera configuración o .env vacío
+
+```sh
+git pull origin main
+npm.cmd run setup
+npm.cmd run dev
+```
+
+`setup` crea `.env` a partir de la plantilla si falta o está vacío. Pregunta únicamente por el ID y el secreto OAuth que falten (el secreto se introduce sin mostrarse), y después pregunta duración, precio, días y horarios. Conserva las credenciales existentes y el token si siguen correspondiendo a la cuenta y al cliente configurados. Si cambias el cliente o la cuenta, deja el token vacío para pedir una autorización nueva. Introduce los datos de Google en tu terminal local, nunca en el chat.
+
+No hay un `.env` de pruebas con credenciales reales. `.env.example` es solo una plantilla; `npm test` usa respuestas simuladas de Google sin conectar con una cuenta ni enviar invitaciones. El `.env` privado no se descarga con Git. Para sustituir credenciales ya guardadas, usa `npm.cmd run setup:env -- --replace-google`.
+
 ## Abrir en Visual Studio Code
 
 Si ya clonaste el repositorio, abre una terminal en su carpeta y ejecuta:
