@@ -62,3 +62,17 @@ test('importa el JSON en el archivo privado sin imprimirlo y conserva los horari
   assert.equal(env.GOOGLE_CLIENT_ID,clientId);assert.equal(env.GOOGLE_CLIENT_SECRET,'fake-json-secret');assert.equal(env.AVAILABLE_HOURS,'09:00');
   assert.ok(!result.stdout.includes('fake-json-secret'));assert.ok(!result.stderr.includes('fake-json-secret'));
 });
+test('importa el archivo JSON por su ruta, incluso con espacios, sin imprimir credenciales',async t=>{
+  const path=await directory(t);const file=join(path,'Google credentials.json');
+  await writeFile(file,JSON.stringify({web:{client_id:clientId,client_secret:'fake-file-secret',redirect_uris:['http://127.0.0.1:53682/callback']}}));
+  const result=run(path,'',['--json-file',file]);assert.equal(result.status,0,result.stderr);
+  const env=parseEnv(await readFile(join(path,'.env'),'utf8'));
+  assert.equal(env.GOOGLE_CLIENT_SECRET,'fake-file-secret');assert.equal(env.GOOGLE_CLIENT_ID,clientId);
+  assert.ok(!result.stdout.includes('fake-file-secret'));assert.ok(!result.stderr.includes('fake-file-secret'));
+});
+test('un archivo de Google inválido conserva intacto el .env existente',async t=>{
+  const path=await directory(t);const file=join(path,'invalid.json');const original='EXISTING_SETTING=keep-me\n';
+  await writeFile(join(path,'.env'),original);await writeFile(file,'{"secret":"fake-private-value"');
+  const result=run(path,'',['--json-file',file]);assert.equal(result.status,1);
+  assert.equal(await readFile(join(path,'.env'),'utf8'),original);assert.ok(!result.stderr.includes('fake-private-value'));
+});

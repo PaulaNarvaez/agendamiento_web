@@ -5,6 +5,7 @@ import { readFile, writeFile, lstat, rename, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parseEnv } from 'node:util';
+import { readGoogleFile } from './google-file.js';
 import { parseGoogleCredentials } from './google-json.js';
 import { organizerEmail } from '../configuration.js';
 
@@ -45,7 +46,14 @@ try {
   const replace = process.argv.includes('--replace-google');
   let clientId = current.GOOGLE_CLIENT_ID?.trim();
   let clientSecret = current.GOOGLE_CLIENT_SECRET?.trim();
-  if (process.argv.includes('--json')) {
+  const fileIndex = process.argv.indexOf('--json-file');
+  const inlineFile = process.argv.find(argument => argument.startsWith('--json-file='));
+  if (fileIndex !== -1 || inlineFile) {
+    const supplied = inlineFile ? inlineFile.slice('--json-file='.length) : process.argv[fileIndex + 1];
+    const path = supplied && !supplied.startsWith('--') ? supplied : undefined;
+    const text = await readGoogleFile(path, question);
+    ({ clientId, clientSecret } = parseGoogleCredentials(text));
+  } else if (process.argv.includes('--json')) {
     const text = await question('Pega el JSON completo de Google en una sola línea (entrada oculta): ', true);
     ({ clientId, clientSecret } = parseGoogleCredentials(text));
   } else {

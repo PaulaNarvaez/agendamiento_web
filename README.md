@@ -16,14 +16,22 @@ npm.cmd run dev
 
 No hay un `.env` de pruebas con credenciales reales. `.env.example` es solo una plantilla; `npm test` usa respuestas simuladas de Google sin conectar con una cuenta ni enviar invitaciones. El `.env` privado no se descarga con Git. Para sustituir credenciales ya guardadas, usa `npm.cmd run setup:env -- --replace-google`.
 
-## Importar el JSON completo de Google sin copiar campos
+## Importar el archivo de Google sin pegar JSON
 
 ```sh
 npm.cmd run setup:google
 npm.cmd run dev
 ```
 
-Pega el JSON de tu cliente de Google en una sola línea en la pregunta de entrada oculta. El asistente extrae ID y secreto, valida la URI de retorno del cliente web y actualiza solo tu `.env` privado; no guarda el JSON en Git ni imprime sus valores. Después pregunta los datos de atención. Si solo quieres importar las credenciales conservando los datos de sesiones, ejecuta `npm.cmd run setup:env -- --json`.
+En Windows se abre un selector: elige el archivo `.json` descargado de Google Cloud. En otros sistemas se solicita su ruta. No pegues JSON en PowerShell ni en CMD. El asistente lee el archivo, valida la URI de retorno y guarda ID y secreto únicamente en `.env`. Después pregunta los datos de atención.
+
+Para indicar directamente un archivo y conservar los datos de sesiones:
+
+```sh
+npm.cmd run setup:env -- --json-file "C:\Users\Paula\Downloads\client_secret.json"
+```
+
+Usa el nombre real de tu archivo. Si cancelas la selección o el archivo no es válido, no se modifica `.env`. El modo anterior de pegado oculto sigue disponible con `npm.cmd run setup:env -- --json`.
 
 Usa credenciales activas del mismo cliente. Si compartiste el secreto en un chat o repositorio, reemplázalo en Google Cloud y utiliza el nuevo únicamente en tu computador.
 
