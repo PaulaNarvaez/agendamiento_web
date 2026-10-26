@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { clientAddress } from './client-address.js';
 import { readFile } from 'node:fs/promises';
 import { findPortrait } from './portrait.js';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,8 @@ import { missingSettings, configurationReport, organizerConfigurationIssue, orga
 import { reserveWithMeet, createGoogleClient, googleDiagnostic, isGoogleRateLimit } from './calendar.js';
 import { localDate, slotsFor, validDate, validateBooking, zone } from './scheduling.js';
 
+const trustedHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+if (!Number.isInteger(trustedHops) || trustedHops < 0 || trustedHops > 5) throw new Error('TRUST_PROXY_HOPS debe ser un entero de 0 a 5.');
 const live = missingSettings().length === 0 && !organizerConfigurationIssue();
 const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
 const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
@@ -34,6 +37,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   try {
     const url = new URL(req.url, 'http://localhost');
+    if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, { status: 'ok' });
     if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: Boolean(await findPortrait(root)), timeZone: zone, today: localDate() });
     if (req.method === 'GET' && url.pathname === '/api/availability') {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se pueden realizar reservas en este momento.' });
@@ -44,7 +48,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/bookings') {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se ha realizado ninguna reserva.' });
       if (req.headers['sec-fetch-site'] === 'cross-site' || (req.headers.origin && req.headers.origin !== `https://${req.headers.host}` && req.headers.origin !== `http://${req.headers.host}`)) return json(res, 403, { error: 'Solicitud no permitida.' });
-      const address = req.socket.remoteAddress;
+      const address = clientAddress(req, trustedHops);
       const rate = rates.get(address);
       if (rate && rate.until > Date.now() && rate.count >= 8) return json(res, 429, { error: 'Demasiados intentos. Intenta nuevamente en unos minutos.' });
       rates.set(address, { count: rate && rate.until > Date.now() ? rate.count + 1 : 1, until: rate && rate.until > Date.now() ? rate.until : Date.now() + 600000 });

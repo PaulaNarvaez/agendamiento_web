@@ -17,6 +17,7 @@
     "setup:sessions": "node scripts/setup-sessions.js",
     "setup:env": "node scripts/setup-env.js",
     "setup": "node scripts/setup-env.js && node scripts/setup-sessions.js",
-    "setup:google": "node scripts/setup-env.js --json-file && node scripts/setup-sessions.js"
+    "setup:google": "node scripts/setup-env.js --json-file && node scripts/setup-sessions.js",
+    "setup:photo": "node scripts/setup-photo.js"
   }
 }

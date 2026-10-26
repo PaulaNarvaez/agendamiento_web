@@ -22,6 +22,8 @@ test('servidor sin configurar: no ofrece horarios ni permite reservas ficticias'
   t.after(() => child.kill());
   await once(child.stdout, 'data');
   const base = 'http://127.0.0.1:3198';
+  assert.equal((await fetch(base+'/health')).status,200);
+  assert.equal((await fetch(base+'/.env')).status,404);
   const page = await fetch(base); assert.equal(page.status, 200); assert.match(await page.text(), /Camila Leiva/);
   const config = await (await fetch(base+'/api/config')).json(); assert.equal(config.bookingEnabled, false); assert.equal(config.modality, 'online');
   const date = new Date(`${config.today}T12:00:00Z`); date.setUTCDate(date.getUTCDate()+1); while ([0,6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate()+1);

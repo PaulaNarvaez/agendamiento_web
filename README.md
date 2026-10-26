@@ -61,6 +61,41 @@ npm start
 
 Ejecuta `git pull origin main`, conserva tu `.env` y reinicia con `npm.cmd start` en Windows. No necesitas crear un enlace Meet ni volver a autorizar si ya concediste los permisos de Calendar. Comprueba `npm.cmd run check:config`: deben estar completos duración, valor, días y horas, además de las credenciales. Prueba dos reservas con datos propios y verifica que sus eventos e invitaciones contengan enlaces Meet diferentes. Las pruebas automatizadas usan Google simulado; la comprobación con la cuenta real sigue siendo necesaria.
 
+## Publicar sin dejar tu computador encendido: Render
+
+El repositorio incluye `render.yaml`, Node 24 y un lockfile para instalar con `npm ci`. La configuración solicita un servicio web con plan **Free**. Comprueba disponibilidad y condiciones del plan en Render antes de crearlo; no se ha realizado un despliegue desde este entorno ni se verificaron sus condiciones comerciales actuales. La URL pública la asigna Render al crear el servicio.
+
+1. Sube la foto y cualquier cambio pendiente a GitHub.
+2. En [Render](https://render.com/), entra con GitHub usando **PaulaNarvaez**.
+3. Elige **New → Blueprint**, conecta `PaulaNarvaez/agendamiento_web` y selecciona `main`.
+4. Revisa que el servicio indique **Free**. Completa los valores privados que solicita el Blueprint: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SESSION_DURATION_MINUTES`, `SESSION_PRICE_CLP`, `AVAILABLE_WEEKDAYS` y `AVAILABLE_HOURS`. Usa los valores activos de tu `.env` local, sin publicarlos en GitHub. La cuenta y calendario ya se fijan a `pruebacami12@gmail.com`.
+5. Despliega y espera a que Render marque el servicio como activo. Abre la dirección HTTPS `.onrender.com` que muestre su panel. Usa esa dirección para compartir la web.
+6. Haz una reserva con datos propios y comprueba Calendar, Meet e invitación. El endpoint `/health` comprueba el proceso web, no el envío de correos ni la autorización de Google.
+
+Tu computador puede apagarse: el servidor está en Render. Los planes gratuitos pueden suspender servicios por inactividad y tener arranques lentos, cuotas y limitaciones. Es una opción para comenzar y mostrar el proyecto, sin garantía de disponibilidad continua. Para atención de pacientes con requisitos de disponibilidad, evalúa un plan con servicio permanente.
+
+La autorización de Google se completa primero en tu computador; en Render se ejecuta `npm start`, no el asistente interactivo. El callback local de Google no necesita convertirse en la URL pública porque la web no inicia sesiones OAuth de pacientes. Una app OAuth en modo prueba puede requerir renovar su autorización a los siete días. No publiques un secreto expuesto: reemplázalo y usa credenciales activas.
+
+El Blueprint configura `TRUST_PROXY_HOPS=1` para identificar visitantes detrás del proxy y evitar compartir el mismo límite de reservas entre todos. No actives esa opción en otros entornos sin revisar su cadena de proxies. Se usa una sola instancia. Las reservas permanecen en Google Calendar; la foto se recupera desde GitHub en cada despliegue.
+
+## Incorporar la foto de Camila
+
+Guarda la fotografía original como JPG, PNG o WebP en tu computador. En Windows ejecuta:
+
+```powershell
+npm.cmd run setup:photo
+```
+
+Selecciona la imagen en la ventana. Se copia sin modificar sus bytes a `public/camila.jpg`, `public/camila.png` o `public/camila.webp`, según su formato real; la web aplica el difuminado mediante CSS. Si había una imagen distinta, se conserva un respaldo en `.local-backups`, excluido de Git. Después súbela:
+
+```powershell
+git add "public/camila.*"
+git commit -m (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+git push origin main
+```
+
+Conserva la foto en el repositorio para que aparezca también en Render. La vista previa de la imagen dentro del chat no es un archivo disponible para el despliegue.
+
 ## Estado de las reservas
 
 Sin la configuración completa, la agenda muestra **«Agenda no disponible»** y bloquea la selección de horarios y el formulario. No ofrece horas de ejemplo ni un botón de reserva ficticia. Las API de disponibilidad y reserva responden con 503 hasta completar la configuración. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.

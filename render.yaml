@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: camila-leiva-agenda
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: GOOGLE_ACCOUNT_EMAIL
+        value: pruebacami12@gmail.com
+      - key: GOOGLE_CALENDAR_ID
+        value: pruebacami12@gmail.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: SESSION_DURATION_MINUTES
+        sync: false
+      - key: SESSION_PRICE_CLP
+        sync: false
+      - key: AVAILABLE_WEEKDAYS
+        sync: false
+      - key: AVAILABLE_HOURS
+        sync: false
