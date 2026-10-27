@@ -102,8 +102,8 @@ async function loadAgenda() {
     showStep('date');
     displayed = new Date(`${config.today.slice(0,7)}-01T12:00:00Z`);
     $('mode-notice').textContent = 'Consultando disponibilidad en Google Calendar…';
-    $('session-details').textContent = `${config.duration} minutos · ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(config.price)} · Por videollamada`;
-    $('faq-price').textContent = $('session-details').textContent;
+    $('session-details').textContent = `${config.duration} minutos · Valores según previsión · Por videollamada`;
+    $('faq-price').textContent = `Sesiones de ${config.duration} minutos. Valores de atención 2026: Fonasa $22.000 (presentando certificado de afiliación), Isapre $26.500 y particular $30.000 (incluyen boleta para reembolso).`;
     renderCalendar(); await selectDate(config.today);
   } catch {
     unavailableAgenda('No pudimos conectar con la agenda. Intenta nuevamente.');
