@@ -24,6 +24,8 @@ test('servidor sin configurar: no ofrece horarios ni permite reservas ficticias'
   const base = 'http://127.0.0.1:3198';
   assert.equal((await fetch(base+'/health')).status,200);
   assert.equal((await fetch(base+'/.env')).status,404);
+  const emblem = await fetch(base+'/brand-emblem.png'); assert.equal(emblem.status,200); assert.equal(emblem.headers.get('content-type'),'image/png');
+  const logo = await fetch(base+'/brand-logo.svg'); assert.equal(logo.status,200); assert.match(await logo.text(),/Terapia frecuencia amorosa/);
   const page = await fetch(base); assert.equal(page.status, 200); assert.match(await page.text(), /Camila Leiva/);
   const config = await (await fetch(base+'/api/config')).json(); assert.equal(config.bookingEnabled, false); assert.equal(config.modality, 'online');
   const date = new Date(`${config.today}T12:00:00Z`); date.setUTCDate(date.getUTCDate()+1); while ([0,6].includes(date.getUTCDay())) date.setUTCDate(date.getUTCDate()+1);

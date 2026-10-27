@@ -30,7 +30,7 @@ let bookingQueue = Promise.resolve();
 const rates = new Map();
 function json(res, status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
 const root = fileURLToPath(new URL('./public/', import.meta.url));
-const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/sculpture.svg': ['sculpture.svg', 'image/svg+xml'] };
+const assets = { '/': ['index.html','text/html'], '/styles.css': ['styles.css','text/css'], '/app.js': ['app.js','text/javascript'], '/sculpture.svg': ['sculpture.svg', 'image/svg+xml'], '/brand-emblem.png': ['brand-emblem.png', 'image/png'], '/brand-logo.svg': ['brand-logo.svg', 'image/svg+xml'] };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'same-origin');
@@ -77,7 +77,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && assets[url.pathname]) {
       const [file, type] = assets[url.pathname];
       const data = await readFile(root + file);
-      res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8` }); return res.end(data);
+      res.writeHead(200, { 'Content-Type': type.startsWith('image/') ? type : `${type}; charset=utf-8` }); return res.end(data);
     }
     json(res, 404, { error: 'No encontrado.' });
   } catch (error) {

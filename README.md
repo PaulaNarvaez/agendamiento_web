@@ -4,6 +4,10 @@ Sitio de atención psicológica exclusivamente telemática, con agenda y reserva
 
 La portada presenta el texto centrado y seis objetos abstractos animados. En escritorio responden suavemente al cursor. El control «Pausar movimiento» detiene la animación; se respeta la preferencia de movimiento reducido del sistema y se pausan los objetos fuera de pantalla.
 
+## Identidad visual
+
+La marca visible es **Terapia frecuencia amorosa · Ps. Camila Belén Leiva S.**, basada en el logo proporcionado. El emblema modernizado conserva el perfil, el ojo y una flor. Está en `public/brand-emblem.png`, con fondo transparente, y se usa en cabecera, pie e icono del navegador. `public/brand-logo.svg` contiene la versión horizontal autónoma con el nombre completo y el emblema integrado. Los recursos se sirven desde `/brand-emblem.png` y `/brand-logo.svg` y viajan con el repositorio al desplegar en Render.
+
 ## Primera configuración o .env vacío
 
 ```sh

@@ -150,3 +150,46 @@
   .portrait { border-radius: 23px; }
   .portrait-caption { bottom: 16px; left: 16px; max-width: calc(100% - 32px); }
 }
+
+/* Identidad: Terapia frecuencia amorosa. */
+:root { --ink: #3d303b; --muted: #7b6876; --purple: #925477; --cream: #fffaf7; --line: #ebdfe5; --lavender: #f2e8ef; }
+.header { padding-top: 17px; padding-bottom: 17px; }
+.brand { gap: 10px; letter-spacing: 0; }
+.brand-emblem { flex: 0 0 auto; object-fit: contain; width: 64px; height: 64px; }
+.brand-wordmark { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.brand .brand-prefix { margin: 0; font-family: Arial,Helvetica,sans-serif; font-size: 8px; letter-spacing: 3.4px; text-transform: uppercase; font-weight: 500; color: #945474; }
+.brand-wordmark strong { font-family: Georgia,'Times New Roman',serif; font-size: 23px; font-weight: 400; line-height: 1.05; letter-spacing: -.6px; color: #8b416d; white-space: nowrap; }
+.brand-professional { font-size: 8px; font-weight: 400; letter-spacing: 1px; color: #78636f; margin-top: 3px; white-space: nowrap; }
+.motion-hero { border-color: #f0e0e8; background: radial-gradient(ellipse at 50% 45%, #fffdfb 8%, #fdf8fa 48%, #f2e7ef 100%); }
+.hero-center h1>strong { color: #a05a7d; }
+.hero-center .eyebrow i { background: #bc527d; }
+.hero-center .eyebrow { letter-spacing: 1.5px; }
+.hero-center .button { background: #70435e; }
+.hero-center .button:hover { background: #925477; }
+.closing { background: #f0e0e8; }
+footer .brand-emblem { width: 57px; height: 57px; }
+footer .brand-wordmark strong { font-size: 21px; }
+@media(max-width:1000px) {
+  .brand-emblem { width: 56px; height: 56px; }
+  .brand-wordmark strong { font-size: 20px; }
+  .brand-professional { font-size: 7px; }
+  .header nav { gap: 18px; }
+}
+@media(max-width:700px) {
+  .header { padding: 14px 18px; gap: 12px; }
+  .brand { gap: 7px; }
+  .brand-emblem { width: 46px; height: 52px; }
+  .brand-wordmark strong { font-size: 17px; letter-spacing: -.5px; }
+  .brand .brand-prefix { font-size: 6px; letter-spacing: 2.5px; }
+  .brand-professional { font-size: 6px; letter-spacing: .4px; margin-top: 2px; }
+  .hero-center .eyebrow { max-width: 100%; font-size: 6.5px; letter-spacing: 1px; }
+  footer .brand-wordmark strong { font-size: 19px; }
+}
+@media(max-width:380px) {
+  .header { padding-left: 12px; padding-right: 12px; gap: 8px; }
+  .header .brand-wordmark strong { font-size: 14px; }
+  .header .brand-emblem { width: 37px; height: 47px; }
+  .header .button.small { font-size: 9px; padding: 9px 10px; gap: 6px; }
+  .header .button.small span:before { width: 18px; height: 18px; font-size: 13px; }
+}
+@media(min-width:701px) and (max-width:900px) { .header nav { display: none; } }
