@@ -206,3 +206,31 @@ npm test
 ```
 
 Incluyen horarios de Chile, cruces de eventos, validación exclusivamente online, bloqueo de reservas sin configuración y solicitudes de Google con respuestas simuladas. Las pruebas simuladas nunca envían invitaciones ni sustituyen la validación con una cuenta real.
+
+### Administrar reservas desde tu terminal
+
+La fuente de las reservas sigue siendo Google Calendar; estos comandos consultan y modifican sus eventos reales. No necesitas tener el servidor local encendido. Usa tu `.env` local autorizado para `pruebacami12@gmail.com`, también si la web está publicada en Render. No publiques capturas de la lista: contiene nombres y correos de pacientes.
+
+```powershell
+# Próximos 90 días; muestra ID, horario, nombre y correo
+npm.cmd run reservas
+
+# Buscar por nombre, correo o ID dentro del período
+npm.cmd run reservas -- listar --buscar "Paula"
+
+# Consultar otro período (la fecha final no se incluye)
+npm.cmd run reservas -- listar --desde 2026-10-01 --hasta 2026-12-01
+
+# Copia el ID completo mostrado en la lista y sustituye ID_REAL
+npm.cmd run reservas -- ver ID_REAL
+npm.cmd run reservas -- mover ID_REAL 2026-11-10 15:00
+npm.cmd run reservas -- cancelar ID_REAL
+```
+
+Las fechas del ejemplo deben reemplazarse por las que necesites. Para mover, usa una fecha futura y hora de Chile en formato `HH:MM`. Conserva la duración, invitados y Meet. Puedes acordar una hora fuera de las franjas publicadas. Comprueba eventos ocupados antes de modificar; Google Calendar no ofrece una operación atómica de comprobar y reservar, por lo que conviene evitar modificaciones simultáneas desde otros dispositivos.
+
+Mover y cancelar muestran primero la reserva y piden escribir `CONFIRMAR` en la terminal. La cancelación elimina el evento activo de Calendar, libera su horario y solicita notificar a los invitados; no es una eliminación permanente de datos de Google. No existe borrado masivo ni confirmación automática. Si la reserva cambió desde la consulta, la operación se rechaza. Los eventos recurrentes se administran directamente en Calendar.
+
+Solo administra eventos con el título que genera esta web (`Sesión online · Camila Leiva, psicóloga`); eventos renombrados deben revisarse directamente en Calendar. La lista incluye todas las páginas de resultados del período. Google puede limitar notificaciones: aceptar la modificación no prueba la entrega del correo. Si aparece un error o timeout, revisa el evento antes de repetir. Los cambios de Calendar se reflejan al volver a consultar la disponibilidad de la web.
+
+Los iconos de interfaz son SVG lineales propios, incluidos en el HTML: no requieren cargar una biblioteca externa ni enviar datos de visitantes a servicios de iconos.

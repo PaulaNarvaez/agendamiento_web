@@ -187,3 +187,13 @@ test('verifica pruebacami12 antes de usar su token para Calendar', async () => {
   assert.equal(calls.length,3);
   assert.match(calls[1],/openidconnect/);assert.match(calls[2],/calendar\/v3\/freeBusy/);
 });
+
+test('cliente transmite If-Match sin permitir sobrescribir su autorización', async () => {
+  const google = createGoogleClient({clientId:'fake',clientSecret:'fake',refreshToken:'fake'}, async (url, options) => {
+    if (url.includes('oauth2.googleapis.com')) return Response.json({access_token:'verified-token',expires_in:3600});
+    assert.equal(options.headers['If-Match'], '"v1"');
+    assert.equal(options.headers.Authorization, 'Bearer verified-token');
+    return Response.json({id:'event'});
+  });
+  await google('calendars/test/events/event', {method:'PATCH',headers:{'If-Match':'"v1"',Authorization:'ignored'},body:'{}'});
+});

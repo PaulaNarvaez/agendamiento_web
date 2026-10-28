@@ -58,7 +58,7 @@ export function createGoogleClient(config, request = fetch) {
     }
     const response = await request(`https://www.googleapis.com/calendar/v3/${path}`, {
       ...options,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { ...options.headers, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(15000),
     });
     if (!response.ok) throw await apiError(response);
