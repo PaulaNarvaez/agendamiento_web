@@ -1,4 +1,4 @@
-export const organizerEmail = 'pruebacami12@gmail.com';
+export const organizerEmail = 't.frecuenciaamorosa@gmail.com';
 
 export const requiredSettings = [
   'GOOGLE_CLIENT_ID',

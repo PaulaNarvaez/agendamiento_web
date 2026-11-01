@@ -15,9 +15,15 @@ test('detecta valores vacíos y reconoce la configuración completa', () => {
   environment.AVAILABLE_HOURS = '   ';
   assert.deepEqual(missingSettings(environment), ['AVAILABLE_HOURS']);
 });
-test('solo permite configurar la cuenta y calendario de pruebacami12', async () => {
+test('solo permite configurar la cuenta y calendario de t.frecuenciaamorosa', async () => {
   const { organizerConfigurationIssue, organizerEmail } = await import('../configuration.js');
   assert.equal(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:organizerEmail,GOOGLE_CALENDAR_ID:organizerEmail}),null);
   assert.ok(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:'old@example.com',GOOGLE_CALENDAR_ID:'old@example.com'}));
   assert.ok(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:organizerEmail,GOOGLE_CALENDAR_ID:'old@example.com'}));
+});
+
+ test('rechaza la cuenta anterior y acepta mayúsculas en la nueva dirección', async () => {
+  const { organizerConfigurationIssue } = await import('../configuration.js');
+  assert.ok(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:'pruebacami12@gmail.com',GOOGLE_CALENDAR_ID:'pruebacami12@gmail.com'}));
+  assert.equal(organizerConfigurationIssue({GOOGLE_ACCOUNT_EMAIL:'T.frecuenciaamorosa@gmail.com',GOOGLE_CALENDAR_ID:'T.frecuenciaamorosa@gmail.com'}),null);
 });

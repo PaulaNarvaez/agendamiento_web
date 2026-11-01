@@ -12,9 +12,9 @@ services:
       - key: TRUST_PROXY_HOPS
         value: "1"
       - key: GOOGLE_ACCOUNT_EMAIL
-        value: pruebacami12@gmail.com
+        value: t.frecuenciaamorosa@gmail.com
       - key: GOOGLE_CALENDAR_ID
-        value: pruebacami12@gmail.com
+        value: t.frecuenciaamorosa@gmail.com
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

@@ -72,7 +72,7 @@ El repositorio incluye `render.yaml`, Node 24 y un lockfile para instalar con `n
 1. Sube la foto y cualquier cambio pendiente a GitHub.
 2. En [Render](https://render.com/), entra con GitHub usando **PaulaNarvaez**.
 3. Elige **New → Blueprint**, conecta `PaulaNarvaez/agendamiento_web` y selecciona `main`.
-4. Revisa que el servicio indique **Free**. Completa los valores privados que solicita el Blueprint: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SESSION_DURATION_MINUTES`, `SESSION_PRICE_CLP`, `AVAILABLE_WEEKDAYS` y `AVAILABLE_HOURS`. Usa los valores activos de tu `.env` local, sin publicarlos en GitHub. La cuenta y calendario ya se fijan a `pruebacami12@gmail.com`.
+4. Revisa que el servicio indique **Free**. Completa los valores privados que solicita el Blueprint: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `SESSION_DURATION_MINUTES`, `SESSION_PRICE_CLP`, `AVAILABLE_WEEKDAYS` y `AVAILABLE_HOURS`. Usa los valores activos de tu `.env` local, sin publicarlos en GitHub. La cuenta y calendario ya se fijan a `t.frecuenciaamorosa@gmail.com`.
 5. Despliega y espera a que Render marque el servicio como activo. Abre la dirección HTTPS `.onrender.com` que muestre su panel. Usa esa dirección para compartir la web.
 6. Haz una reserva con datos propios y comprueba Calendar, Meet e invitación. El endpoint `/health` comprueba el proceso web, no el envío de correos ni la autorización de Google.
 
@@ -104,7 +104,7 @@ Conserva la foto en el repositorio para que aparezca también en Render. La vist
 
 Sin la configuración completa, la agenda muestra **«Agenda no disponible»** y bloquea la selección de horarios y el formulario. No ofrece horas de ejemplo ni un botón de reserva ficticia. Las API de disponibilidad y reserva responden con 503 hasta completar la configuración. No basta con indicar una dirección de correo: su titular debe autorizar el acceso a Google.
 
-Cuenta organizadora prevista: **pruebacami12@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. Todavía no se ha autorizado esta cuenta ni verificado el envío real de invitaciones.
+Cuenta organizadora prevista: **t.frecuenciaamorosa@gmail.com**. El correo no es una credencial y no otorga acceso al calendario. La autorización debe realizarla la titular de esta cuenta; cambiar el código o el correo en la configuración no concede acceso a Google.
 
 ## Completar duración, precio, días y horas sin editar archivos
 
@@ -118,26 +118,32 @@ En la terminal de VS Code, dentro de la carpeta del proyecto, ejecuta `npm.cmd r
 
 La autorización de Google y la configuración de la sesión son requisitos separados. Tener un refresh token no habilita reservas si falta duración, precio, días u horas. El informe verifica presencia; no garantiza que Google acepte las credenciales. Al iniciar sin la configuración completa, el servidor también imprime automáticamente los campos que faltan. Si ves «Probar reserva de demostración», estás ejecutando una versión anterior: actualiza el código, reinicia el proceso y recarga el navegador.
 
-## Cambiar las invitaciones a pruebacami12@gmail.com
+## Cambiar las invitaciones a t.frecuenciaamorosa@gmail.com
 
-Detén el servidor antes de cambiar de cuenta. En Google Auth Platform → Público, agrega `pruebacami12@gmail.com` como usuario de prueba si la app continúa en modo prueba. Después ejecuta:
+Detén el servidor antes de cambiar de cuenta. En Google Auth Platform → Público, agrega `t.frecuenciaamorosa@gmail.com` como usuario de prueba si la app continúa en modo prueba. Después ejecuta:
 
 ```sh
 git pull origin main
-npm.cmd run connect:google -- --account=pruebacami12@gmail.com
+npm.cmd run connect:google -- --account=t.frecuenciaamorosa@gmail.com
 npm.cmd run dev
 ```
 
-En el navegador autoriza **pruebacami12@gmail.com**. La cuenta permitida es exclusivamente `pruebacami12@gmail.com`, incluso si tu `.env` conserva otra. `npm.cmd run dev` inicia una nueva autorización cuando detecta la cuenta o el calendario anteriores. El parámetro `--account` se admite para esa misma dirección y rechaza otras. Solo después de verificar la nueva cuenta, el asistente actualiza `GOOGLE_ACCOUNT_EMAIL`, `GOOGLE_CALENDAR_ID` y `GOOGLE_REFRESH_TOKEN` en `.env`. Conserva ID, secreto, duración, precio y horarios. No reemplaces tu `.env` por la plantilla.
+En el navegador autoriza **t.frecuenciaamorosa@gmail.com**. La cuenta permitida es exclusivamente `t.frecuenciaamorosa@gmail.com`, incluso si tu `.env` conserva otra. `npm.cmd run dev` inicia una nueva autorización cuando detecta la cuenta o el calendario anteriores. El parámetro `--account` se admite para esa misma dirección y rechaza otras. Solo después de verificar la nueva cuenta, el asistente actualiza `GOOGLE_ACCOUNT_EMAIL`, `GOOGLE_CALENDAR_ID` y `GOOGLE_REFRESH_TOKEN` en `.env`. Conserva ID, secreto, duración, precio y horarios. No reemplaces tu `.env` por la plantilla.
 
 Las nuevas reservas se crean en el calendario principal de la nueva cuenta, que será la organizadora de las invitaciones. Google controla la dirección técnica que entrega sus notificaciones; no es un correo SMTP personalizado. Los eventos existentes de la cuenta anterior no se migran ni se eliminan, y sus bloqueos no se consultan en el calendario nuevo: refleja allí las sesiones vigentes antes de aceptar nuevas reservas.
+
+### Aplicar el cambio también en Render
+
+Después de autorizar la nueva cuenta localmente, ejecuta `npm.cmd run check:google`. En Render → servicio → Environment, actualiza **juntos** `GOOGLE_ACCOUNT_EMAIL` y `GOOGLE_CALENDAR_ID` a `t.frecuenciaamorosa@gmail.com`, y `GOOGLE_REFRESH_TOKEN` al nuevo valor generado en tu `.env` local. Conserva ID y secreto si usaste el mismo cliente OAuth; si cambiaste de cliente, actualiza ambos también. No compartas esos valores en el chat ni los subas a GitHub. Guarda y vuelve a desplegar. Cambiar `render.yaml` no sustituye la autorización ni garantiza la actualización de un servicio creado manualmente.
+
+Hasta que la configuración y el token correspondan a la cuenta nueva, las reservas quedarán deshabilitadas o Google rechazará la consulta. Google puede enviar las invitaciones mediante sus propias direcciones técnicas, mostrando la cuenta nueva como organizadora. Los pacientes pueden aceptar la invitación de Calendar.
 
 ## Conectar tu cuenta de Google (en tu propio computador)
 
 1. En [Google Cloud Console](https://console.cloud.google.com/), crea o selecciona un proyecto y habilita **Google Calendar API**.
-2. Configura la pantalla de consentimiento OAuth en Google Auth Platform. Para una cuenta Gmail personal el público es externo. Mientras la aplicación esté en modo prueba, agrega `pruebacami12@gmail.com` como usuario de prueba. Solicita los permisos `openid`, `email`, `https://www.googleapis.com/auth/calendar.events` y `https://www.googleapis.com/auth/calendar.freebusy`.
+2. Configura la pantalla de consentimiento OAuth en Google Auth Platform. Para una cuenta Gmail personal el público es externo. Mientras la aplicación esté en modo prueba, agrega `t.frecuenciaamorosa@gmail.com` como usuario de prueba. Solicita los permisos `openid`, `email`, `https://www.googleapis.com/auth/calendar.events` y `https://www.googleapis.com/auth/calendar.freebusy`.
 3. Crea un cliente OAuth de tipo **Aplicación de escritorio**. El ID de cliente proporcionado ya está incluido en `.env.example`. Copia el secreto completo al archivo `.env` local, usando `.env.example` como modelo. Si ya tienes un `.env`, actualiza solo `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` sin sobrescribir tus otros valores. Puedes crear la copia desde el explorador de VS Code. No subas `.env` a Git ni compartas contraseñas o tokens.
-4. Conserva `GOOGLE_ACCOUNT_EMAIL=pruebacami12@gmail.com` y `GOOGLE_CALENDAR_ID=pruebacami12@gmail.com` para usar tu calendario principal. Después ejecuta:
+4. Conserva `GOOGLE_ACCOUNT_EMAIL=t.frecuenciaamorosa@gmail.com` y `GOOGLE_CALENDAR_ID=t.frecuenciaamorosa@gmail.com` para usar tu calendario principal. Después ejecuta:
 
    ```sh
    npm run connect:google
@@ -161,7 +167,7 @@ En modo prueba de Google, los refresh tokens de apps externas pueden caducar a l
 
 El servidor consulta la disponibilidad del calendario configurado y vuelve a comprobarla al reservar. Crea un evento **privado** llamado «Sesión online · Camila Leiva, psicóloga», con fecha, inicio y término en `America/Santiago`, modalidad telemática, instrucciones y enlace de conexión. Añade al paciente como asistente y solicita a Google el envío de la invitación con `sendUpdates=all`.
 
-El evento aparece en el calendario de `pruebacami12@gmail.com` cuando se usa ese ID. Los bloqueos que crees en ese mismo calendario impiden reservas superpuestas. Esta instalación solo admite el calendario principal de `pruebacami12@gmail.com`. La aplicación comprueba también que el token pertenezca a esa cuenta; una autorización de otra cuenta se rechaza antes de consultar o modificar eventos.
+El evento aparece en el calendario de `t.frecuenciaamorosa@gmail.com` cuando se usa ese ID. Los bloqueos que crees en ese mismo calendario impiden reservas superpuestas. Esta instalación solo admite el calendario principal de `t.frecuenciaamorosa@gmail.com`. La aplicación comprueba también que el token pertenezca a esa cuenta; una autorización de otra cuenta se rechaza antes de consultar o modificar eventos.
 
 Para recibir avisos en tu propio correo, configura las notificaciones de ese calendario en Google Calendar. Cada paciente controla las notificaciones de su calendario. Los recordatorios configurados en el evento corresponden a la cuenta organizadora; no sustituyen ni garantizan los recordatorios del paciente. Las invitaciones dependen de Google y pueden llegar a spam: no hay un servicio SMTP separado ni seguimiento de entrega.
 
@@ -209,7 +215,7 @@ Incluyen horarios de Chile, cruces de eventos, validación exclusivamente online
 
 ### Administrar reservas desde tu terminal
 
-La fuente de las reservas sigue siendo Google Calendar; estos comandos consultan y modifican sus eventos reales. No necesitas tener el servidor local encendido. Usa tu `.env` local autorizado para `pruebacami12@gmail.com`, también si la web está publicada en Render. No publiques capturas de la lista: contiene nombres y correos de pacientes.
+La fuente de las reservas sigue siendo Google Calendar; estos comandos consultan y modifican sus eventos reales. No necesitas tener el servidor local encendido. Usa tu `.env` local autorizado para `t.frecuenciaamorosa@gmail.com`, también si la web está publicada en Render. No publiques capturas de la lista: contiene nombres y correos de pacientes.
 
 ```powershell
 # Próximos 90 días; muestra ID, horario, nombre y correo

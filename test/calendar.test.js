@@ -22,13 +22,13 @@ test('cliente Google renueva token y pide envío de invitación sin exponer cred
     calls.push({ url, options });
     return Response.json(calls.length === 1 ? { access_token: 'fake-access', expires_in: 3600 } : { id: 'fake-event' });
   });
-  const path = `calendars/${encodeURIComponent('pruebacami12@gmail.com')}/events?sendUpdates=all`;
+  const path = `calendars/${encodeURIComponent('t.frecuenciaamorosa@gmail.com')}/events?sendUpdates=all`;
   await google(path, { method: 'POST', body: JSON.stringify(bookingEvent({ name: 'Ana', email: 'ana@example.com' }, slot)) });
   await google('freeBusy', { method: 'POST', body: '{}' });
   assert.equal(calls.length, 3, 'reutiliza token vigente');
   assert.equal(calls[0].url, 'https://oauth2.googleapis.com/token');
   assert.equal(calls[0].options.body.get('grant_type'), 'refresh_token');
-  assert.match(calls[1].url, /pruebacami12%40gmail.com\/events\?sendUpdates=all/);
+  assert.match(calls[1].url, /t.frecuenciaamorosa%40gmail.com\/events\?sendUpdates=all/);
   assert.equal(calls[1].options.headers.Authorization, 'Bearer fake-access');
 });
 test('falla de autenticación no se interpreta como reserva confirmada', async () => {
@@ -166,7 +166,7 @@ test('no reintenta antes de una espera larga exigida por Google', async () => {
 });
 test('rechaza un token de otra cuenta aunque se configure el correo correcto', async () => {
   const calls=[];
-  const google=createGoogleClient({accountEmail:'pruebacami12@gmail.com'},async(url)=>{
+  const google=createGoogleClient({accountEmail:'t.frecuenciaamorosa@gmail.com'},async(url)=>{
     calls.push(url);
     if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'fake-old-access',expires_in:3600});
     if(url==='https://openidconnect.googleapis.com/v1/userinfo')return Response.json({email:'old@example.com',email_verified:true});
@@ -175,12 +175,12 @@ test('rechaza un token de otra cuenta aunque se configure el correo correcto', a
   for(let attempt=0;attempt<2;attempt++)await assert.rejects(google('freeBusy',{method:'POST',body:'{}'}),error=>error.googleReason==='accountMismatch');
   assert.equal(calls.length,4,'nunca deja en caché el token de la cuenta incorrecta');
 });
-test('verifica pruebacami12 antes de usar su token para Calendar', async () => {
+test('verifica t.frecuenciaamorosa antes de usar su token para Calendar', async () => {
   const calls=[];
-  const google=createGoogleClient({accountEmail:'pruebacami12@gmail.com'},async(url)=>{
+  const google=createGoogleClient({accountEmail:'t.frecuenciaamorosa@gmail.com'},async(url)=>{
     calls.push(url);
     if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'fake-new-access',expires_in:3600});
-    if(url==='https://openidconnect.googleapis.com/v1/userinfo')return Response.json({email:'pruebacami12@gmail.com',email_verified:true});
+    if(url==='https://openidconnect.googleapis.com/v1/userinfo')return Response.json({email:'t.frecuenciaamorosa@gmail.com',email_verified:true});
     return Response.json({calendars:{}});
   });
   await google('freeBusy',{method:'POST',body:'{}'});

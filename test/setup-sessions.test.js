@@ -10,7 +10,7 @@ import { parseEnv } from 'node:util';
 async function setup(t, input) {
   const directory = await mkdtemp(join(tmpdir(), 'camila-session-setup-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const original = 'GOOGLE_CLIENT_SECRET="fake-private-secret"\nGOOGLE_REFRESH_TOKEN="fake-private-refresh"\nGOOGLE_ACCOUNT_EMAIL=pruebacami12@gmail.com\nSESSION_DURATION_MINUTES=\nSESSION_PRICE_CLP=\nAVAILABLE_WEEKDAYS=\nAVAILABLE_HOURS=\n';
+  const original = 'GOOGLE_CLIENT_SECRET="fake-private-secret"\nGOOGLE_REFRESH_TOKEN="fake-private-refresh"\nGOOGLE_ACCOUNT_EMAIL=t.frecuenciaamorosa@gmail.com\nSESSION_DURATION_MINUTES=\nSESSION_PRICE_CLP=\nAVAILABLE_WEEKDAYS=\nAVAILABLE_HOURS=\n';
   await writeFile(join(directory, '.env'), original);
   const result = spawnSync(process.execPath, [fileURLToPath(new URL('../scripts/setup-sessions.js', import.meta.url))], { cwd: directory, input, encoding:'utf8' });
   return { result, original, contents: await readFile(join(directory,'.env'),'utf8') };
