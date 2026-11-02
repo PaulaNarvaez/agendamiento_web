@@ -22,6 +22,8 @@ const state = randomBytes(32).toString('hex');
 const verifier = randomBytes(48).toString('base64url');
 const challenge = createHash('sha256').update(verifier).digest('base64url');
 const target = resolve('.env');
+console.log(`Configuración privada: ${target}`);
+console.log(`Cuenta que debes autorizar: ${organizerEmail}.`);
 const redirect = 'http://127.0.0.1:53682/callback';
 let processing = false;
 const server = http.createServer(async (req, res) => {

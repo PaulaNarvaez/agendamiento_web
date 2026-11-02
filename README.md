@@ -240,3 +240,14 @@ Mover y cancelar muestran primero la reserva y piden escribir `CONFIRMAR` en la 
 Solo administra eventos con el título que genera esta web (`Sesión online · Camila Leiva, psicóloga`); eventos renombrados deben revisarse directamente en Calendar. La lista incluye todas las páginas de resultados del período. Google puede limitar notificaciones: aceptar la modificación no prueba la entrega del correo. Si aparece un error o timeout, revisa el evento antes de repetir. Los cambios de Calendar se reflejan al volver a consultar la disponibilidad de la web.
 
 Los iconos de interfaz son SVG lineales propios, incluidos en el HTML: no requieren cargar una biblioteca externa ni enviar datos de visitantes a servicios de iconos.
+
+### Configurar y comprobar Google con un solo comando
+
+```cmd
+git pull origin main
+npm.cmd run configurar:google
+```
+
+Este comando solicita el ID y el secreto del mismo cliente OAuth, guarda ambos solo en el `.env` privado, abre la autorización para `t.frecuenciaamorosa@gmail.com` y comprueba la conexión a Calendar. Pega el secreto en la entrada oculta de la terminal, no en el chat. No necesita un JSON de Google. Muestra la ruta del archivo que usa el asistente para evitar confundir diferentes copias del proyecto. Conserva los datos de horarios, duración y precio. El secreto se puede sustituir sin publicar archivos privados.
+
+Cada paso se ejecuta en un proceso nuevo para leer los valores recién guardados. Si falla un paso, no continúa con el siguiente. Detén primero cualquier asistente de autorización anterior con Ctrl+C. Al terminar correctamente, inicia con `npm.cmd run dev`. La configuración de Render se actualiza aparte en Environment; este comando no modifica el servicio publicado.

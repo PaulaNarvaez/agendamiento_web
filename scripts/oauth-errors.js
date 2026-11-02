@@ -1,5 +1,5 @@
 const messages = {
-  invalid_client: 'El ID de cliente o el secreto no son válidos. Comprueba que ambos pertenezcan al mismo cliente OAuth. Si cambiaste el secreto, actualiza GOOGLE_CLIENT_SECRET en tu .env local, guarda y reinicia el asistente.',
+  invalid_client: 'El ID de cliente o el secreto no son válidos. Comprueba que ambos pertenezcan al mismo cliente OAuth. Ejecuta npm.cmd run configurar:google para guardar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET y reiniciar la autorización. No pegues las credenciales en el chat ni en GitHub.',
   invalid_grant: 'El código de autorización venció o no coincide con esta solicitud. Reinicia el asistente y abre el enlace nuevo. Comprueba también que la URI configurada sea http://127.0.0.1:53682/callback.',
   redirect_uri_mismatch: 'La URI del cliente web debe ser exactamente http://127.0.0.1:53682/callback. Guarda el cambio en Google Cloud y reinicia el asistente.',
   unauthorized_client: 'Google no permite este intercambio para el cliente OAuth configurado. Revisa el tipo de cliente y sus credenciales en Google Cloud.',
