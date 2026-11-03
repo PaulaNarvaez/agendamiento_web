@@ -1,4 +1,5 @@
 const $ = id => document.getElementById(id);
+$('footer-year').textContent = new Date().getFullYear();
 let config, selectedDate, selectedHour, displayed, requestVersion = 0;
 const formatDate = date => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
 function showStep(step) {
@@ -32,7 +33,7 @@ async function selectDate(date) {
   try {
     const response = await fetch(`/api/availability?date=${date}`); const data = await response.json();
     if (version !== requestVersion) return;
-    if (!response.ok) throw new Error(data.error);
+    if (!response.ok) throw Object.assign(new Error(data.error), { availabilityFailure: true });
     $('mode-notice').textContent = 'Agenda habilitada para reservas';
     $('slots').replaceChildren();
     if (!data.slots.length) return slotMessage('No hay horarios disponibles para este día. Selecciona otra fecha.');
@@ -44,7 +45,14 @@ async function selectDate(date) {
         $('continue').disabled = false;
       }); $('slots').append(button);
     }
-  } catch (error) { if (version === requestVersion) { $('mode-notice').textContent = 'No se pudo consultar Google Calendar. No se ha confirmado ninguna reserva.'; slotMessage(error.message || 'No se pudo cargar la agenda. Intenta nuevamente.'); } }
+  } catch (error) {
+    if (version === requestVersion) {
+      $('mode-notice').textContent = 'No pudimos cargar los horarios. Puedes volver a intentarlo o escribir por WhatsApp.';
+      slotMessage(error.availabilityFailure ? error.message : 'No se pudo conectar con la agenda. Comprueba tu conexión e intenta nuevamente.');
+      const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'availability-retry'; retry.textContent = 'Volver a consultar horarios';
+      retry.addEventListener('click', () => selectDate(date)); $('slots').append(retry);
+    }
+  }
 }
 for (const [id, delta] of [['prev-month',-1],['next-month',1]]) $(id).addEventListener('click', () => { displayed.setUTCMonth(displayed.getUTCMonth()+delta); renderCalendar(); });
 $('continue').addEventListener('click', () => {

@@ -197,3 +197,19 @@ test('cliente transmite If-Match sin permitir sobrescribir su autorización', as
   });
   await google('calendars/test/events/event', {method:'PATCH',headers:{'If-Match':'"v1"',Authorization:'ignored'},body:'{}'});
 });
+
+test('un cliente nuevo tras reiniciar usa el refresh token guardado sin pedir otro consentimiento', async()=>{
+ let refreshes=0;
+ const config={clientId:'fake',clientSecret:'fake-secret',refreshToken:'saved-refresh',accountEmail:'t.frecuenciaamorosa@gmail.com'};
+ const request=async(url,options)=>{
+  if(url==='https://oauth2.googleapis.com/token'){
+   refreshes++;assert.equal(options.body.get('grant_type'),'refresh_token');assert.equal(options.body.get('refresh_token'),'saved-refresh');
+   return Response.json({access_token:'access-'+refreshes,expires_in:3600});
+  }
+  if(url==='https://openidconnect.googleapis.com/v1/userinfo')return Response.json({email:config.accountEmail,email_verified:true});
+  return Response.json({calendars:{}});
+ };
+ await createGoogleClient(config,request)('freeBusy',{method:'POST',body:'{}'});
+ await createGoogleClient(config,request)('freeBusy',{method:'POST',body:'{}'});
+ assert.equal(refreshes,2);
+});

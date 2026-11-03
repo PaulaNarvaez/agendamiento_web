@@ -42,7 +42,11 @@ const server = http.createServer(async (req, res) => {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se pueden realizar reservas en este momento.' });
       const date = url.searchParams.get('date');
       if (!validDate(date) || date < localDate() || Date.parse(date) > Date.now() + 90 * 86400000) return json(res, 400, { error: 'Elige una fecha entre hoy y los próximos 90 días.' });
-      return json(res, 200, { slots: await available(date) });
+      try { return json(res, 200, { slots: await available(date) }); }
+      catch (error) {
+        console.error(googleDiagnostic(error));
+        return json(res, 503, { code: 'AVAILABILITY_UNAVAILABLE', error: 'No pudimos consultar los horarios en este momento. Intenta nuevamente o coordina tu sesión por WhatsApp.' });
+      }
     }
     if (req.method === 'POST' && url.pathname === '/api/bookings') {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se ha realizado ninguna reserva.' });

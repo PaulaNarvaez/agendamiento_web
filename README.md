@@ -282,3 +282,13 @@ AVAILABLE_HOURS_BY_DAY='{"3":["15:00","16:00","17:00","18:00","19:00"],"5":["10:
 En el campo de Render de `AVAILABLE_HOURS_BY_DAY`, pega el JSON **sin las comillas simples exteriores**. La variable por día tiene prioridad sobre `AVAILABLE_HOURS`; no combina las horas del miércoles y viernes. Los demás días aparecen deshabilitados. El servidor vuelve a comprobar el día y la hora al reservar, y consulta los bloqueos de Google Calendar. Una configuración por día incompleta o inválida impide iniciar el servidor, para no abrir horas por error.
 
 Las reservas ya hechas conservan su horario y duración; este cambio se aplica a la disponibilidad de nuevas reservas. Revisa las existentes antes de reprogramarlas. `setup:sessions` sigue disponible para configurar un horario común a todos los días: borra el horario por día para evitar que una configuración anterior tenga prioridad.
+
+### Al cerrar VS Code
+
+El asistente OAuth guarda el refresh token en `.env`; cerrar VS Code no revoca esa autorización. El servidor obtiene un access token nuevo usando ese refresh token al reiniciar y al vencer el access token. No necesitas ejecutar `configurar:google` en cada inicio: usa `npm.cmd run dev` localmente.
+
+Si cierras la terminal que ejecuta el servidor local, `localhost` deja de responder. La web de Render funciona con su propio proceso y variables de Environment, independientemente de tu computador. El `.env` local no se copia a Render mediante Git. Un servicio gratuito puede suspenderse por inactividad; eso es distinto de revocar Google.
+
+Si vuelve a fallar la agenda, ejecuta `npm.cmd run check:google` en el equipo afectado o consulta Render → Logs. La línea `[Agenda]` distingue problemas de cliente, autorización, cuenta y límites sin mostrar secretos. En modo OAuth de prueba, un refresh token con permisos Calendar puede expirar a los siete días; verifica el estado del proyecto en Google Auth Platform → Público antes de atribuir el fallo al cierre del editor. No regeneres credenciales ni cambies de cuenta sin revisar el diagnóstico.
+
+Un error al consultar horarios ahora muestra un aviso de disponibilidad y permite reintentar la lectura. No se interpreta como una reserva enviada. Los errores de creación de reservas conservan sus advertencias de revisión para evitar duplicados.
