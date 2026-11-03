@@ -22,10 +22,12 @@ services:
       - key: GOOGLE_REFRESH_TOKEN
         sync: false
       - key: SESSION_DURATION_MINUTES
-        sync: false
+        value: "55"
       - key: SESSION_PRICE_CLP
         sync: false
       - key: AVAILABLE_WEEKDAYS
-        sync: false
+        value: "3,5"
       - key: AVAILABLE_HOURS
-        sync: false
+        value: ""
+      - key: AVAILABLE_HOURS_BY_DAY
+        value: '{"3":["15:00","16:00","17:00","18:00","19:00"],"5":["10:00","11:00","12:00","15:00","16:00","17:00","18:00"]}'

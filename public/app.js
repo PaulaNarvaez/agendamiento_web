@@ -15,7 +15,8 @@ function renderCalendar() {
   for (let day = 1; day <= days; day++) {
     const date = new Date(Date.UTC(displayed.getUTCFullYear(), displayed.getUTCMonth(), day, 12)).toISOString().slice(0,10);
     const button = document.createElement('button'); button.type = 'button'; button.textContent = day;
-    button.disabled = date < config.today || date > max.toISOString().slice(0,10);
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+    button.disabled = date < config.today || date > max.toISOString().slice(0,10) || (Array.isArray(config.weekdays) && !config.weekdays.includes(weekday));
     button.classList.toggle('selected', date === selectedDate); button.classList.toggle('today', date === config.today);
     button.setAttribute('aria-label', formatDate(date)); button.setAttribute('aria-pressed', String(date === selectedDate));
     button.addEventListener('click', () => selectDate(date)); $('calendar').append(button);
@@ -100,11 +101,15 @@ async function loadAgenda() {
     $('booking-unavailable').hidden = true;
     document.querySelector('.booking-tabs').hidden = false;
     showStep('date');
-    displayed = new Date(`${config.today.slice(0,7)}-01T12:00:00Z`);
+    const firstAvailable = new Date(`${config.today}T12:00:00Z`);
+    if (config.weekdays?.length) while (!config.weekdays.includes(firstAvailable.getUTCDay())) firstAvailable.setUTCDate(firstAvailable.getUTCDate() + 1);
+    const initialDate = firstAvailable.toISOString().slice(0,10);
+    displayed = new Date(`${initialDate.slice(0,7)}-01T12:00:00Z`);
     $('mode-notice').textContent = 'Consultando disponibilidad en Google Calendar…';
+    if (config.weekdays?.length) $('schedule-days').textContent = config.weekdays.map(day => ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][day]).join(' y ');
     $('session-details').textContent = `${config.duration} minutos · Valores según previsión · Por videollamada`;
     $('faq-price').textContent = `Sesiones de ${config.duration} minutos. Valores de atención 2026: Fonasa $22.000 (presentando certificado de afiliación), Isapre $26.500 y particular $30.000 (incluyen boleta para reembolso).`;
-    renderCalendar(); await selectDate(config.today);
+    renderCalendar(); await selectDate(initialDate);
   } catch {
     unavailableAgenda('No pudimos conectar con la agenda. Intenta nuevamente.');
   } finally { $('retry-agenda').disabled = false; }

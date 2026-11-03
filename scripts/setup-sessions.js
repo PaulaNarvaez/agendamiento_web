@@ -56,7 +56,7 @@ try {
   const latest = await lstat(target).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
   if (latest && !latest.isFile()) throw new Error('.env debe ser un archivo regular.');
   if (latest) contents = await readFile(target, 'utf8');
-  const values = { SESSION_DURATION_MINUTES: duration, SESSION_PRICE_CLP: price, AVAILABLE_WEEKDAYS: days, AVAILABLE_HOURS: hours };
+  const values = { SESSION_DURATION_MINUTES: duration, SESSION_PRICE_CLP: price, AVAILABLE_WEEKDAYS: days, AVAILABLE_HOURS: hours, AVAILABLE_HOURS_BY_DAY: '' };
   for (const [key, value] of Object.entries(values)) {
     const pattern = new RegExp(`^(?:export\\s+)?${key}\\s*=.*$`, 'gm');
     contents = pattern.test(contents) ? contents.replace(pattern, `${key}=${value}`) : `${contents.trimEnd()}\n${key}=${value}\n`;

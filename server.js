@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { weeklyHours } from './weekly-hours.js';
 import { clientAddress } from './client-address.js';
 import { readFile } from 'node:fs/promises';
 import { findPortrait } from './portrait.js';
@@ -10,15 +11,13 @@ import { localDate, slotsFor, validDate, validateBooking, zone } from './schedul
 const trustedHops = Number(process.env.TRUST_PROXY_HOPS || 0);
 if (!Number.isInteger(trustedHops) || trustedHops < 0 || trustedHops > 5) throw new Error('TRUST_PROXY_HOPS debe ser un entero de 0 a 5.');
 const live = missingSettings().length === 0 && !organizerConfigurationIssue();
-const duration = Number(process.env.SESSION_DURATION_MINUTES || 50);
-const weekdays = (process.env.AVAILABLE_WEEKDAYS || '1,2,3,4,5').split(',').map(Number);
-const hours = [...new Set((process.env.AVAILABLE_HOURS || '09:00,10:00,11:00,15:00,16:00,17:00').split(','))].sort();
-if (!Number.isInteger(duration) || duration < 15 || duration > 180 || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6) || hours.some(hour => !/^([01]\d|2[0-3]):[0-5]\d$/.test(hour))) throw new Error('Configuración de horarios no válida');
+const { duration, days: weekdays, schedule } = weeklyHours();
 if (live && (!Number.isFinite(Number(process.env.SESSION_PRICE_CLP)) || Number(process.env.SESSION_PRICE_CLP) < 0)) throw new Error('Precio no válido');
 const google = createGoogleClient({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, refreshToken: process.env.GOOGLE_REFRESH_TOKEN, accountEmail: organizerEmail });
 async function available(date) {
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   if (!weekdays.includes(day)) return [];
+  const hours = schedule[day];
   const candidates = slotsFor(date, hours, duration);
   if (!live || !candidates.length) return candidates;
   const data = await google('freeBusy', { method: 'POST', body: JSON.stringify({ timeMin: candidates[0].start, timeMax: candidates.at(-1).end, timeZone: zone, items: [{ id: process.env.GOOGLE_CALENDAR_ID }] }) });
@@ -38,7 +37,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, { status: 'ok' });
-    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: Boolean(await findPortrait(root)), timeZone: zone, today: localDate() });
+    if (req.method === 'GET' && url.pathname === '/api/config') return json(res, 200, { bookingEnabled: live, duration: live ? duration : null, price: live ? Number(process.env.SESSION_PRICE_CLP) : null, modality: 'online', hasPortrait: Boolean(await findPortrait(root)), timeZone: zone, weekdays: live ? weekdays : [], today: localDate() });
     if (req.method === 'GET' && url.pathname === '/api/availability') {
       if (!live) return json(res, 503, { code: 'AGENDA_UNAVAILABLE', error: 'La agenda aún no está habilitada. No se pueden realizar reservas en este momento.' });
       const date = url.searchParams.get('date');

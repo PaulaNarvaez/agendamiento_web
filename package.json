@@ -20,6 +20,7 @@
     "setup:google": "node scripts/setup-env.js --json-file && node scripts/setup-sessions.js",
     "setup:photo": "node scripts/setup-photo.js",
     "reservas": "node --env-file-if-exists=.env scripts/reservations.js",
-    "configurar:google": "node scripts/setup-env.js --replace-google && node --env-file-if-exists=.env scripts/connect-google.js && node --env-file-if-exists=.env scripts/check-google.js"
+    "configurar:google": "node scripts/setup-env.js --replace-google && node --env-file-if-exists=.env scripts/connect-google.js && node --env-file-if-exists=.env scripts/check-google.js",
+    "setup:agenda": "node scripts/setup-agenda.js"
   }
 }
