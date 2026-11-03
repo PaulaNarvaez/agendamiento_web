@@ -251,3 +251,34 @@ npm.cmd run configurar:google
 Este comando solicita el ID y el secreto del mismo cliente OAuth, guarda ambos solo en el `.env` privado, abre la autorización para `t.frecuenciaamorosa@gmail.com` y comprueba la conexión a Calendar. Pega el secreto en la entrada oculta de la terminal, no en el chat. No necesita un JSON de Google. Muestra la ruta del archivo que usa el asistente para evitar confundir diferentes copias del proyecto. Conserva los datos de horarios, duración y precio. El secreto se puede sustituir sin publicar archivos privados.
 
 Cada paso se ejecuta en un proceso nuevo para leer los valores recién guardados. Si falla un paso, no continúa con el siguiente. Detén primero cualquier asistente de autorización anterior con Ctrl+C. Al terminar correctamente, inicia con `npm.cmd run dev`. La configuración de Render se actualiza aparte en Environment; este comando no modifica el servicio publicado.
+
+### Agenda confirmada: miércoles y viernes
+
+Sesiones de **55 minutos**, con inicios cada hora y 5 minutos de pausa:
+
+| Día | Horas de inicio (Chile) | Último término |
+| --- | --- | --- |
+| Miércoles | 15:00, 16:00, 17:00, 18:00, 19:00 | 19:55 |
+| Viernes mañana | 10:00, 11:00, 12:00 | 12:55 |
+| Viernes tarde | 15:00, 16:00, 17:00, 18:00 | 18:55 |
+
+Para aplicar esta agenda al `.env` existente sin cambiar credenciales ni precios:
+
+```cmd
+git pull origin main
+npm.cmd run setup:agenda
+npm.cmd run dev
+```
+
+El comando guarda la agenda confirmada sin preguntas y muestra solo las variables públicas de horario que también debes copiar a **Render → Environment**. Una plantilla nueva ya incluye estos horarios, pero actualizar Git no sobrescribe un `.env` existente ni las variables configuradas manualmente en Render. Guarda y reinicia/reimplanta después de cambiar las variables.
+
+```env
+SESSION_DURATION_MINUTES=55
+AVAILABLE_WEEKDAYS=3,5
+AVAILABLE_HOURS=
+AVAILABLE_HOURS_BY_DAY='{"3":["15:00","16:00","17:00","18:00","19:00"],"5":["10:00","11:00","12:00","15:00","16:00","17:00","18:00"]}'
+```
+
+En el campo de Render de `AVAILABLE_HOURS_BY_DAY`, pega el JSON **sin las comillas simples exteriores**. La variable por día tiene prioridad sobre `AVAILABLE_HOURS`; no combina las horas del miércoles y viernes. Los demás días aparecen deshabilitados. El servidor vuelve a comprobar el día y la hora al reservar, y consulta los bloqueos de Google Calendar. Una configuración por día incompleta o inválida impide iniciar el servidor, para no abrir horas por error.
+
+Las reservas ya hechas conservan su horario y duración; este cambio se aplica a la disponibilidad de nuevas reservas. Revisa las existentes antes de reprogramarlas. `setup:sessions` sigue disponible para configurar un horario común a todos los días: borra el horario por día para evitar que una configuración anterior tenga prioridad.

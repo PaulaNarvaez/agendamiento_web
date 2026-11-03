@@ -214,3 +214,5 @@ footer .brand-wordmark strong { font-size: 21px; }
 
 /* El texto de los pasos permanece horizontal al abrir el detalle. */
 .process-step .step-copy{min-width:0}.process-step .step-copy>span{display:block;transform:none;line-height:1.6}.process-step .step-number{line-height:1.4}.process-step>summary{min-height:94px}
+
+.booking-intro .schedule-days{font-size:14px;color:var(--purple);margin:20px 0 0}

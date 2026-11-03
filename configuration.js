@@ -12,7 +12,7 @@ export const requiredSettings = [
 ];
 
 export function missingSettings(environment = process.env) {
-  return requiredSettings.filter(name => !environment[name]?.trim());
+  return requiredSettings.filter(name => !(name === 'AVAILABLE_HOURS' && environment.AVAILABLE_HOURS_BY_DAY?.trim()) && !environment[name]?.trim());
 }
 
 export function organizerConfigurationIssue(environment = process.env) {
